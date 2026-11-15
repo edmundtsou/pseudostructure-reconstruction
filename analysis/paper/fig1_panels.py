@@ -505,8 +505,8 @@ def panel_ds(args, plt, out):
     from pseudospace.handoffs import crossing, scaled_profile
 
     root = Path(args.results_root) / 'paper_figures'
-    # c: a sharp and a gradual control-PT gene (Fig. 4 screen); each mouse inside its own covered range,
-    # scaled to its own maximum
+    # c: a sharp and a gradual control-PT gene (Fig. 4 screen); each mouse inside its own covered range, scaled to
+    # its own maximum, then one mean line per gene (two lines per gene read as two genes)
     z = np.load(root / 'fig4/screen/curves.npz')
     grid, genes = z['grid'], list(z['genes'])
     b = pd.read_csv(root / 'fig4/screen/axes.csv').set_index('pattern').loc['AAAAA']
@@ -515,10 +515,13 @@ def panel_ds(args, plt, out):
     items = []
     for gene, col in (('Slc5a2', '#3F5FA8'), ('Kap', '#A9844B')):
         i = genes.index(gene)
+        per = []
         for m in ('Ctrl1A2', 'Ctrl1A4'):
             bx = z[f'bin_x|{m}'][i]
             c = masked(np.exp(z[f'curve|{m}'][i]), np.nanmin(bx), np.nanmax(bx), grid)
-            ax.plot(grid, c / np.nanmax(c), color=col, lw=1.4, alpha=0.9)
+            per.append(c / np.nanmax(c))
+        mean = np.nanmean(per, 0)
+        ax.plot(grid, mean / np.nanmax(mean), color=col, lw=1.6)
         items.append((gene, col, None, True))
     legend_row(fig, items)
     save(fig, out / 'f1_ds_gradients.png')
