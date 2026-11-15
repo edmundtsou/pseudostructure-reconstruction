@@ -3,7 +3,8 @@
 Control PT units of the control/AKI fit. Each gene is placed on the mean of the five Fig. 3d gene-half axes built
 without it, and fitted in each control mouse by NB GLMs: bulk, clusters (S1/S2/S3), clusters + curve, curve.
 Category 1 is a peak between segments, category 2 a change within a segment; both need the curve to beat the
-clusters in both mice at a decoy-calibrated 5% threshold. Protocol (frozen before this ran):
+clusters in both mice at a decoy-calibrated 5% threshold. Tests and curves use COAST (coast.tl.test_genes, and the
+penalised NB GAM coast.tl.fit_curves, 2026-11-15; before, an unpenalised 6-df B-spline drew the curves). Protocol (frozen before this ran):
 docs/paper/fig4-continuous-vs-discrete.md.
 
   python analysis/paper/fig4_screen.py [--results-root <dir>] [--jobs 8]
@@ -96,53 +97,49 @@ def log2_cp10k(eta: np.ndarray) -> np.ndarray:
     return (eta + np.log(1e4)) / np.log(2)
 
 
-def fit_mouse(y, lib, x, label, knots, rng, jobs):
-    """NB fits of one mouse on one axis. y: units x genes (dense)."""
-    from pseudospace.nb_gam import nb_dispersion, nb_fit, nested_nb_lr
-    from pseudospace.stats_gam import make_gam_design
+def fit_pattern(counts, lib, x, label, sample, genes, seed, jobs):
+    """COAST fits of one axis (github.com/edmundtsou/COAST): in each mouse, the likelihood ratio of clusters + spline
+    over clusters against a decoy shuffled within clusters (coast.tl.test_genes); the curve of both mice from the
+    penalised NB GAM (coast.tl.fit_curves, shared knots and smoothing); cluster and bulk means by NB GLM.
+    counts: units x genes (sparse)."""
+    import anndata as ad
+    import coast
+    from pseudospace.nb_gam import nb_dispersion, nb_fit
 
-    w, off = np.ones(len(x)), np.log(lib)
-    onehot = np.eye(3)[label]
-    spline = make_gam_design(x, knots)
-    designs = {'clusters': onehot, 'full': np.column_stack([onehot, spline[:, 1:]])}
-    disp = nb_dispersion(y, designs['full'], w, off, n_jobs=jobs)
-    lr = nested_nb_lr(y, designs, w, off, disp, {'beyond': ('clusters', 'full')}, n_jobs=jobs, fill=None)
-
-    xs = shuffle_within(x, label, rng)
-    decoy = {'clusters': onehot, 'full': np.column_stack([onehot, make_gam_design(xs, knots)[:, 1:]])}
-    ddisp = nb_dispersion(y, decoy['full'], w, off, n_jobs=jobs)
-    dlr = nested_nb_lr(y, decoy, w, off, ddisp, {'beyond': ('clusters', 'full')}, n_jobs=jobs, fill=None)
-
-    curve = nb_fit(y, spline, w, off, disp, n_jobs=jobs)
-    clusters = nb_fit(y, onehot, w, off, disp, n_jobs=jobs)
-    bulk = nb_fit(y, np.ones((len(x), 1)), w, off, disp, n_jobs=jobs)
-    order = np.argsort(x)
-    bins = np.array_split(order, N_BINS)
-    with np.errstate(divide='ignore'):
-        bin_means = np.stack([np.log2(1e4 * y[b].sum(0) / lib[b].sum()) for b in bins], 1)
-    return {'lr': lr['beyond'], 'decoy_lr': dlr['beyond'],
-            'converged': lr['converged'] & curve['converged'] & clusters['converged'],
-            'curve': log2_cp10k(curve['beta'] @ make_gam_design(GRID, knots).T),
-            'clusters': log2_cp10k(clusters['beta']), 'bulk': log2_cp10k(bulk['beta'][:, 0]),
-            'bins': bin_means, 'bin_x': np.array([x[b].mean() for b in bins])}
-
-
-def decoy_threshold(real: np.ndarray, decoy: np.ndarray, fdr: float) -> float:
-    """Smallest c with #(decoy >= c) / #(real >= c) <= fdr."""
-    real, decoy = real[np.isfinite(real)], np.sort(decoy[np.isfinite(decoy)])
-    for c in np.sort(real):
-        n_real = (real >= c).sum()
-        n_decoy = len(decoy) - np.searchsorted(decoy, c, 'left')
-        if n_decoy / n_real <= fdr:
-            return float(c)
-    return np.inf
+    a = ad.AnnData(counts.tocsr().astype(np.float32), obs=pd.DataFrame(
+        {'x': x, 'label': pd.Categorical(label), 'sample': pd.Categorical(sample), 'lib': lib}))
+    a.var_names = list(genes)
+    a.layers['counts'] = a.X
+    curves = coast.tl.fit_curves(a, genes, x='x', sample_key='sample', library='lib', limits=(GRID[0], GRID[-1]),
+                                 n_points=len(GRID), n_jobs=jobs)
+    out = {}
+    for m in MICE:
+        k = sample == m
+        test = coast.tl.test_genes(a[k], x='x', groupby='label', genes=genes, library='lib', df=BASIS_DF, seed=seed,
+                                   n_jobs=jobs)
+        y = a.layers['counts'][k].toarray()
+        w, off, onehot = np.ones(k.sum()), np.log(lib[k]), np.eye(3)[label[k]]
+        disp = nb_dispersion(y, onehot, w, off, n_jobs=jobs)
+        clusters = nb_fit(y, onehot, w, off, disp, n_jobs=jobs)
+        bulk = nb_fit(y, np.ones((k.sum(), 1)), w, off, disp, n_jobs=jobs)
+        order = np.argsort(x[k])
+        bins = np.array_split(order, N_BINS)
+        with np.errstate(divide='ignore'):
+            bin_means = np.stack([np.log2(1e4 * y[b].sum(0) / lib[k][b].sum()) for b in bins], 1)
+        out[m] = {'lr': test.lr.to_numpy(), 'decoy_lr': test.decoy_lr.to_numpy(),
+                  'converged': test.converged.to_numpy(bool) & clusters['converged']
+                  & np.isfinite(curves.loc[m].to_numpy()).any(1),
+                  'curve': curves.loc[m].reindex(genes).to_numpy(float),
+                  'clusters': log2_cp10k(clusters['beta']), 'bulk': log2_cp10k(bulk['beta'][:, 0]),
+                  'bins': bin_means, 'bin_x': np.array([x[k][b].mean() for b in bins])}
+    return out
 
 
 def shape_calls(curve: np.ndarray, b12: float, b23: float) -> dict:
     """Category 1 and 2 shape criteria of one curve (log2 on GRID)."""
     cores = [(0.0, b12 - MARGIN), (b12 + MARGIN, b23 - MARGIN), (b23 + MARGIN, 1.0)]
-    core_mean = [curve[(GRID >= lo) & (GRID <= hi)].mean() for lo, hi in cores]
-    i = int(np.argmax(curve))
+    core_mean = [np.nanmean(curve[(GRID >= lo) & (GRID <= hi)]) for lo, hi in cores]
+    i = int(np.nanargmax(curve))
     xp = GRID[i]
     peak_at = 12 if abs(xp - b12) <= MARGIN else 23 if abs(xp - b23) <= MARGIN else 0
     flank = {12: (0, 1), 23: (1, 2)}.get(peak_at)
@@ -150,8 +147,8 @@ def shape_calls(curve: np.ndarray, b12: float, b23: float) -> dict:
     changes = []
     for lo, hi in cores:
         third = (hi - lo) / 3
-        first = curve[(GRID >= lo) & (GRID <= lo + third)].mean()
-        last = curve[(GRID >= hi - third) & (GRID <= hi)].mean()
+        first = np.nanmean(curve[(GRID >= lo) & (GRID <= lo + third)])
+        last = np.nanmean(curve[(GRID >= hi - third) & (GRID <= hi)])
         changes.append(last - first)
     seg = int(np.argmax(np.abs(changes)))
     return {'peak_x': xp, 'peak_at': peak_at, 'peak_height': height, 'change_segment': seg,
@@ -160,9 +157,8 @@ def shape_calls(curve: np.ndarray, b12: float, b23: float) -> dict:
 
 def main(argv=None):
     import anndata as ad
+    import coast
     from scipy import sparse
-    from pseudospace.stats_gam import gam_internal_knots
-
     args = parse_args(argv)
     root = Path(args.results_root)
     out = root / args.out
@@ -209,18 +205,13 @@ def main(argv=None):
 
     rows, store = [], {m: {} for m in MICE}
     axis_rows = []
-    rng = np.random.default_rng(0)
     for pi, pat in enumerate(sorted(set(pattern))):
         x, ok = pattern_axis(axes, pat)
         b12, b23 = boundary(x[ok], label[ok], 0), boundary(x[ok], label[ok], 1)
-        knots = gam_internal_knots(x[ok], BASIS_DF)
         axis_rows.append({'pattern': pat, 'n_units': int(ok.sum()), 'b12': b12, 'b23': b23})
         gi = np.flatnonzero(pattern == pat)
         sub = counts[:, np.flatnonzero(keep)[gi]]
-        fits = {}
-        for m in MICE:
-            k = ok & (sample == m)
-            fits[m] = fit_mouse(sub[k].toarray(), lib[k], x[k], label[k], knots, rng, args.jobs)
+        fits = fit_pattern(sub[ok], lib[ok], x[ok], label[ok], sample[ok], genes[gi], pi, args.jobs)
         for j, g in enumerate(genes[gi]):
             row = {'gene': g, 'pattern': pat, 'b12': b12, 'b23': b23,
                    'neighbour_ratio': float(neighbour_ratio[gi[j]])}
@@ -241,7 +232,7 @@ def main(argv=None):
     thresholds = {}
     for m in MICE:
         conv = df[f'converged_{m}']
-        thresholds[m] = decoy_threshold(df.loc[conv, f'lr_{m}'].to_numpy(), df.loc[conv, f'decoy_lr_{m}'].to_numpy(), FDR)
+        thresholds[m] = coast.tl.decoy_threshold(df.loc[conv, f'lr_{m}'].to_numpy(), df.loc[conv, f'decoy_lr_{m}'].to_numpy(), FDR)
         df[f'beyond_{m}'] = conv & (df[f'lr_{m}'] >= thresholds[m])
     a, b = MICE
     df['beyond_both'] = df[f'beyond_{a}'] & df[f'beyond_{b}']

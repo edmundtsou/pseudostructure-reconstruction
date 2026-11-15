@@ -305,3 +305,27 @@ Top category 1 genes: Pigr, Cyp4a14, Cyp2d9, Cyp4a10, Hpd (Pigr is again the pan
 in S2, where COAST's S1/S2 boundary falls later. Linear-gain top 10 (smaller gain of the two mice): Pigr 22%,
 Serpina1d, Serpina1f, Slc22a13, Slc22a7 (rank 5, 14%), Car5a, Ugt2b37, Higd1c, Cyp4a12a (rank 9, 13%), Serpina1a; panel
 b keeps Pigr, Slc22a7 and Cyp4a12a.
+
+## Penalised COAST curves and single-nucleus panel (2026-11-15)
+
+At the user's request the screen now uses the pushed COAST code (github.com/edmundtsou/COAST, db5502c): the test is
+`coast.tl.test_genes` (clusters vs clusters + 6-df B-spline, decoy shuffled within clusters; the same model as before)
+and the drawn curves are `coast.tl.fit_curves`, the penalised NB GAM (cubic regression spline, 10 knots, smoothing and
+dispersion by REML, shared by the two mice). The earlier outputs are kept in `screen_bspline_2026-11-12/`.
+
+| | unpenalised B-spline (11-12) | COAST penalised (11-15) |
+|---|---|---|
+| 5% thresholds (Ctrl1A2 / Ctrl1A4) | 15.7 / 15.9 | 16.1 / 16.1 |
+| beyond clusters, both mice | 1,789 | 1,671 |
+| category 1 / category 2 | 5 / 60 | 7 / 31 |
+
+Category 2 fell because the shape calls now read the smoother curves. Top category 1: Pigr, Cyp4a14, Cyp2d9, Cyp4a10,
+Hpd, Hsd17b2, Hao2. The linear-gain top 10 still holds Pigr, Slc22a7 and Cyp4a12a (panel b unchanged). Panel a's
+refit reproduces the stored Pigr curve to 1e-7 log2.
+
+Panel c (was: genes the clusters miss) is now COAST on single-nucleus RNA-seq (`fig4_sc.py`): 7,439 PT nuclei of the
+three adult male mice in the CELLxGENE Census dataset 25818bf7, Harmony over donors, curve oriented by the PT-S1 to
+PT-S3 label panels. ρ of the axis with the authors' S1/S2/S3 labels is 0.90-0.92 per mouse; the S1 nuclei split into
+two groups along the axis (around 0.05 and 0.5) and S2 sits at 0.69, S3 at 0.91 (medians: 0.42, 0.69, 0.91). Pigr
+and Slc22a7 are drawn along it per mouse next to the tubule curves, each scaled to its maximum (Cyp4a12a is not in
+the Census ortholog panel). The two axes are scaled separately, so their positions are not directly comparable.

@@ -2,7 +2,9 @@
 
  gam  how one curve is fitted, refitted from the raw counts: tubules, spline basis, NB fit, LR test vs decoys
  ex   bulk, clusters and pseudostructure on one plot for three example genes
- lines  every gene the clusters miss, by pattern (median curve against the cluster staircase)
+ lines  every gene the clusters miss, by pattern (median curve against the cluster staircase; no longer in Fig. 4)
+ sc   COAST on mouse PT single-nucleus RNA-seq (fig4_sc.py): nuclei and curve in UMAP by the authors' S1/S2/S3
+      labels, label densities along the axis, and the Fig. 4b genes along it next to the tubule curves
  a  one gene three ways: bulk, S1/S2/S3 clusters, pseudostructure (the top category 1 gene)
  b  every gene that passes either category: curves next to the same genes painted with their cluster means, and bulk
  c  the top three category 1 genes (peak between segments)
@@ -34,7 +36,7 @@ LINES = None                # straight lines through the clusters, set by load()
 # the straight lines miss, the cleanest in both mice. Peak at S2/S3; switch within S2; dip just past S2/S3.
 OVERLAY = ['Pigr', 'Slc22a7', 'Cyp4a12a']
 # panel boxes of make_fig4.py in SVG units (1 unit = 0.01 inch here)
-SIZE = {'gam': (1160, 250), 'ex': (540, 760), 'lines': (580, 760), 'a': (540, 292), 'b': (580, 967), 'c': (540, 282), 'd': (540, 282)}
+SIZE = {'gam': (1160, 250), 'ex': (540, 760), 'sc': (580, 760), 'lines': (580, 760), 'a': (540, 292), 'b': (580, 967), 'c': (540, 282), 'd': (540, 282)}
 
 
 def parse_args(argv=None):
@@ -279,13 +281,15 @@ def panel_examples(plt, key, gene_list, genes, grid, curves, out):
 
 # ---------------------------------------------------------------------------------------------------- GAM anatomy
 def refit(results_root, gene, mouse, genes):
-    """Refit one gene in one mouse exactly as fig4_screen.py does; returns the pieces the figure shows."""
+    """Refit one gene exactly as fig4_screen.py does (COAST's penalised NB GAM on both mice, shared knots, smoothing
+    and dispersion); returns the pieces the figure shows for one mouse. Uses COAST's internal basis and fitter
+    (coast.tl._cr_basis, coast.tl._nb_gam) because the figure draws the coefficients, which fit_curves does not
+    return."""
     import anndata as ad
     from scipy import sparse
-    from fig4_screen import BASIS_DF, GRID, N_BINS, N_SPLITS, PT, log2_cp10k, pattern_axis
+    from coast.tl import _cr_basis, _nb_gam
+    from fig4_screen import GRID, N_BINS, N_SPLITS, PT, log2_cp10k, pattern_axis
     from fig3_common import RUNS
-    from pseudospace.nb_gam import nb_dispersion, nb_fit
-    from pseudospace.stats_gam import gam_internal_knots, make_gam_design
 
     root = Path(results_root)
     qc = ad.read_h5ad(root / RUNS['aki'] / '02_qc/units_qc.h5ad', backed='r')
@@ -298,26 +302,30 @@ def refit(results_root, gene, mouse, genes):
     mt = qc.var['mt'].to_numpy(bool)
     lib = np.asarray(counts[:, ~mt].sum(1)).ravel()
     y_all = np.asarray(counts[:, qc.var_names.get_loc(gene)].todense()).ravel()
-    pat = genes.loc[gene, 'pattern']
     axes = {(k, h): pd.read_parquet(root / 'paper_figures/fig3/robustness/aki/reruns' / f'gene_half_s{k}_{h}.parquet')['t']
             .reindex(units).to_numpy(float) for k in range(N_SPLITS) for h in 'AB'}
-    x, ok = pattern_axis(axes, pat)
-    knots = gam_internal_knots(x[ok], BASIS_DF)
-    k = ok & (pt['sample'].astype(str).to_numpy() == mouse)
-    label = pt.segment_class.astype(str).map(PT).to_numpy()[k]
-    xm, ym, lm = x[k], y_all[k][:, None], lib[k]
-    design = make_gam_design(xm, knots)
-    w, off = np.ones(len(xm)), np.log(lm)
-    disp = nb_dispersion(ym, np.column_stack([np.eye(3)[label], design[:, 1:]]), w, off)
-    fit = nb_fit(ym, design, w, off, disp)
-    beta = fit['beta'][0]
-    basis = make_gam_design(GRID, knots)
-    order = np.argsort(xm)
-    bins = np.array_split(order, N_BINS)
-    return {'x': xm, 'y': ym[:, 0], 'lib': lm, 'label': label, 'grid': GRID, 'basis': basis, 'beta': beta,
-            'knots': knots, 'curve': log2_cp10k(basis @ beta),
+    x, ok = pattern_axis(axes, genes.loc[gene, 'pattern'])
+    sample = pt['sample'].astype(str).to_numpy()
+    xs, ys, ls, ss = x[ok], y_all[ok], lib[ok], sample[ok]
+    knots = np.quantile(xs, np.linspace(0, 1, 10))          # coast.tl.fit_curves defaults: k = 10 at quantiles
+    basis, S = _cr_basis(xs, knots)
+    blocks = [(np.flatnonzero(ss == m), basis[ss == m], np.log(ls[ss == m])) for m in sorted(set(ss))]
+    beta = _nb_gam(ys, blocks, S)[sorted(set(ss)).index(mouse)]
+    on_grid = _cr_basis(GRID, knots)[0]
+    k = ss == mouse
+    label = pt.segment_class.astype(str).map(PT).to_numpy()[ok][k]
+    xm, ym, lm = xs[k], ys[k], ls[k]
+    inside = (GRID >= xm.min()) & (GRID <= xm.max())
+    bins = np.array_split(np.argsort(xm), N_BINS)
+    return {'x': xm, 'y': ym, 'lib': lm, 'label': label, 'grid': GRID, 'basis': on_grid, 'beta': beta,
+            'knots': knots, 'curve': np.where(inside, log2_cp10k(on_grid @ beta), np.nan),
             'bin_x': np.array([xm[b].mean() for b in bins]),
-            'bins': np.array([np.log2(1e4 * ym[b, 0].sum() / lm[b].sum()) for b in bins])}
+            'bins': np.array([np.log2(1e4 * ym[b].sum() / lm[b].sum()) for b in bins])}
+
+
+def log2_scale(b):
+    """A knot coefficient (log rate per unit of library) in log2 counts per 10k."""
+    return (b + np.log(1e4)) / np.log(2)
 
 
 def panel_gam(plt, args, root, genes, grid, curves, gene, out, mouse='Ctrl1A2'):
@@ -331,7 +339,7 @@ def panel_gam(plt, args, root, genes, grid, curves, gene, out, mouse='Ctrl1A2'):
     fig = plt.figure(figsize=(SIZE['gam'][0] / 100, SIZE['gam'][1] / 100))
     w, x0s = 0.19, (0.055, 0.30, 0.545, 0.80)
     axs = [fig.add_axes([x0, 0.20, w, 0.66]) for x0 in x0s]
-    titles = ('tubules', 'spline basis', 'NB GAM fit', 'curve vs clusters')
+    titles = ('tubules', 'spline basis', 'penalised NB GAM fit', 'curve vs clusters')
     # 1 tubules: counts per 10k of each PT tubule, coloured by its S1/S2/S3 label
     ax = axs[0]
     cp = np.log2(1 + 1e4 * r['y'] / r['lib'])
@@ -339,22 +347,24 @@ def panel_gam(plt, args, root, genes, grid, curves, gene, out, mouse='Ctrl1A2'):
     ax.scatter(r['x'], cp + jitter, s=1.2, lw=0, c=[seg_col[l] for l in r['label']], alpha=0.6, rasterized=True)
     ax.set_ylabel('log2(1 + counts per 10k)')
     ax.text(0.03, 0.97, gene, transform=ax.transAxes, fontsize=8, style='italic', color=INK, va='top')
-    # 2 basis: each B-spline scaled by its fitted coefficient, on the log scale
+    # 2 basis: the cubic regression spline's basis functions, each scaled by its coefficient (the curve's log rate
+    # at that knot), on the log2 scale; they sum to the fit
     ax = axs[1]
     cmap = plt.get_cmap('viridis')
-    nb = r['basis'].shape[1] - 1
-    for j in range(1, nb + 1):
-        ax.plot(r['grid'], r['beta'][j] * r['basis'][:, j] / np.log(2), color=cmap(j / (nb + 1)), lw=1.1)
+    nb = r['basis'].shape[1]
+    for j in range(nb):
+        ax.plot(r['grid'], log2_scale(r['beta'][j]) * r['basis'][:, j], color=cmap(j / nb), lw=1.1)
     ax.axhline(0, color=BULK, lw=0.6, ls=(0, (2, 1.5)))
     for kn in r['knots']:
         ax.axvline(kn, color='#DDDDDD', lw=0.5, zorder=0)
-    ax.set_ylabel('βₖ Bₖ(t)  (log2)')
+    ax.set_ylabel('βₖ Bₖ(t)  (log2 per 10k)')
     # 3 fit: the sum, with bin means of the same tubules
     ax = axs[2]
     ax.scatter(r['bin_x'], r['bins'], s=6, color=SECTION_COLOURS[mouse], lw=0, zorder=3)
     ax.plot(r['grid'], r['curve'], color=SECTION_COLOURS[mouse], lw=1.6, zorder=4)
     ax.set_ylabel('log2 counts per 10k')
-    ax.text(0.03, 0.97, 'log μ = log lib + Σ βₖ Bₖ(t)', transform=ax.transAxes, fontsize=6.5, color=INK, va='top')
+    ax.text(0.03, 0.97, 'log μ = log lib + Σ βₖ Bₖ(t)\npenalty λ ∫ f″(t)² dt', transform=ax.transAxes,
+            fontsize=6.5, color=INK, va='top', linespacing=1.3)
     # 4 test: likelihood ratio of clusters + spline over clusters, every gene against its label-shuffled decoy
     ax = axs[3]
     lr, dlr = genes[f'lr_{mouse}'].dropna(), genes[f'decoy_lr_{mouse}'].dropna()
@@ -430,6 +440,75 @@ def panel_overlay(plt, gene_list, genes, grid, curves, out):
     plt.close(fig)
 
 
+def panel_sc(plt, args, genes, curves, out):
+    """COAST on single nuclei (fig4_sc.py): UMAP with the curve, label densities along it, and the Fig. 4b genes."""
+    import json
+    from scipy.stats import gaussian_kde
+
+    sc_dir = Path(args.results_root) / args.out / 'sc'
+    nuc = pd.read_parquet(sc_dir / 'nuclei.parquet')
+    nodes = np.load(sc_dir / 'nodes.npy')
+    fits = pd.read_csv(sc_dir / 'curves.csv', index_col=[0, 1])
+    summ = json.loads((sc_dir / 'summary.json').read_text())
+    fig = plt.figure(figsize=(SIZE['sc'][0] / 100, SIZE['sc'][1] / 100))
+    # UMAP, nuclei coloured by the authors' segment label, curve nodes on top
+    ax = fig.add_axes([0.03, 0.55, 0.44, 0.40])
+    order = np.random.default_rng(0).permutation(len(nuc))
+    ax.scatter(nuc.umap1.to_numpy()[order], nuc.umap2.to_numpy()[order], s=0.6, lw=0, rasterized=True,
+               c=[COLOURS[l] for l in nuc.label.to_numpy()[order]])
+    ax.plot(*nodes.T, '-o', color='black', ms=1.8, lw=0.9, mfc='white', mew=0.5)
+    ax.set_axis_off()
+    for i, seg in enumerate(SEGS):
+        ax.text(0.02, 0.98 - 0.07 * i, seg, transform=ax.transAxes, fontsize=6.5, color=COLOURS[seg],
+                weight='bold', va='top')
+    ax.set_title(f"{summ['n_nuclei']:,} PT nuclei, 3 male mice", fontsize=7, color=INK, pad=2)
+    # label densities along the axis
+    ax = fig.add_axes([0.58, 0.58, 0.39, 0.34])
+    grid = np.linspace(0, 1, 300)
+    for i, seg in enumerate(SEGS):
+        base = 2 - i
+        y = gaussian_kde(nuc.t[nuc.label == seg])(grid)
+        ax.fill_between(grid, base, base + 0.85 * y / y.max(), color=COLOURS[seg], alpha=0.45, lw=0)
+        ax.plot(grid, base + 0.85 * y / y.max(), color=COLOURS[seg], lw=0.9)
+        ax.axhline(base, color='#DDDDDD', lw=0.5, zorder=0)
+    ax.set_xlim(0, 1)
+    ax.set_ylim(0, 3)
+    ax.set_yticks([])
+    ax.spines['left'].set_visible(False)
+    ax.set_xticks([0, 0.5, 1])
+    ax.set_xlabel('pseudostructure (nuclei)', labelpad=1)
+    rho = summ['rho_by_donor'].values()
+    ax.set_title(f"ρ {min(rho):.2f}–{max(rho):.2f} per mouse", fontsize=7, color=INK, pad=2)
+    # the Fig. 4b genes along the nuclei axis (each mouse) and along the tubule axis (both control mice), each scaled
+    # to its own maximum: the two assays differ in depth and capture, so only shapes are compared
+    sc_c, tub_c = '#7A5195', SECTION_COLOURS['Ctrl1A2']
+    xs = fits.columns.astype(float).to_numpy()
+    shown = [g for g in OVERLAY if g in fits.index.get_level_values('gene')]
+    h = 0.40 / len(shown)
+    for i, g in enumerate(shown):
+        ax = fig.add_axes([0.12, 0.06 + (len(shown) - 1 - i) * (h + 0.04), 0.85, h])
+        for d in fits.index.get_level_values(0).unique():
+            v = 2 ** fits.loc[(d, g)].to_numpy(float)
+            ax.plot(xs, v / np.nanmax(v), color=sc_c, lw=0.9, alpha=0.8)
+        tub = np.mean([2 ** curves[m]['curve'][g] for m in MICE], 0)
+        ax.plot(np.linspace(0, 1, len(tub)), tub / np.nanmax(tub), color=tub_c, lw=1.6)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 1.08)
+        ax.set_yticks([0, 1])
+        ax.set_ylabel('scaled', labelpad=1)
+        ax.set_title(g, fontsize=8, style='italic', color=INK, pad=2, loc='left')
+        ax.set_xticks([0, 0.5, 1] if i == len(shown) - 1 else [])
+        if i == 0:
+            from matplotlib.lines import Line2D
+            ax.legend([Line2D([], [], color=sc_c, lw=0.9), Line2D([], [], color=tub_c, lw=1.6)],
+                      ['nuclei, per mouse', 'tubules, control mice'], loc='upper left', fontsize=6, frameon=False,
+                      handlelength=1.8, bbox_to_anchor=(0.0, 1.0))
+    ax.set_xlabel('pseudostructure', labelpad=1)
+    fig.savefig(out / 'f4_sc.png', facecolor='white')
+    plt.close(fig)
+    return shown
+
+
 def main(argv=None):
     args = parse_args(argv)
     root = Path(args.results_root) / args.out
@@ -447,7 +526,7 @@ def main(argv=None):
     assert all(g in top10 and g in curves[MICE[0]]['curve'] for g in OVERLAY), 'Fig. 4b examples left the top 10'
     ex = OVERLAY
     panel_overlay(plt, ex, genes, grid, curves, out)
-    print('gam:', gam, '| overlay:', ex)
+    print('gam:', gam, '| overlay:', ex, '| sc genes:', panel_sc(plt, args, genes, curves, out))
     if c1:
         panel_examples(plt, 'c', c1, genes, grid, curves, out)
     if c2:
