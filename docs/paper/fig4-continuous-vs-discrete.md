@@ -329,3 +329,27 @@ PT-S3 label panels. ρ of the axis with the authors' S1/S2/S3 labels is 0.90-0.9
 two groups along the axis (around 0.05 and 0.5) and S2 sits at 0.69, S3 at 0.91 (medians: 0.42, 0.69, 0.91). Pigr
 and Slc22a7 are drawn along it per mouse next to the tubule curves, each scaled to its maximum (Cyp4a12a is not in
 the Census ortholog panel). The two axes are scaled separately, so their positions are not directly comparable.
+
+## Panel c on our own cells replaces the public nuclei (2026-11-15)
+
+User: panel c must use our own data, not CELLxGENE. Cells are bin2cell reconstructions with one parameter set for every
+section (`analysis/bin2cell/bin2cell_run.py`; mouse from the bundle, human run here on GPU, one slice per card).
+Human registration: the decisive checks pass (99.8-99.9 % of nucleus centroids inside their own nucleus); COR has
+0.109 % of bins off the image edge (limit 0.1 %) and MED 89.9 % of centroids on stained tissue (limit 90 %, pale tissue;
+swapped-axes control 52.6 %). Human QC kept 90,069 + 75,674 of 117,349 + 108,294 nucleus-anchored cells.
+`analysis/paper/fig4_sc.py` runs COAST unchanged (`coast_fit.two_pass`), then a PT pass on the pass-1 PT cells with the
+curve oriented PT-S1 -> PT-S3. Each cell is checked against the COAST label of the tubule its nucleus sits in.
+
+| | mouse controls | human |
+|---|---|---|
+| whole-nephron curve, rho with nephron order | 0.45 / 0.54 (PT runs S3 -> S1) | 0.71 / 0.74 |
+| PT cells (pass-1 labels) | 53,007 | 47,646 (every PT cluster called PT-S1) |
+| PT axis vs tubule label, rho per section | **0.76 / 0.81** | **-0.05 / -0.02** |
+| median PT position by tubule label S1 / S2 / S3 | 0.22 / 0.39 / 0.66 | 0.41 / 0.36 / 0.41 |
+
+Mouse COAST cell labels agree with the bundle's own cell types for 75 % (S1) and 77 % (S3) of cells. Human: negative.
+The human "PT" cells hold distal cells (13 % sit in TAL/DCT/CNT/CD tubules, 29 % in no tubule), and the curve follows PT
+purity (ALDOB, GPX3, GATM at one end; CA12 rho 0.55, IGFBP5, DEFB1, SLC12A1, SLC12A3, UMOD at the other), not S1 -> S3.
+Open: the gene overlay compares two rank-scaled axes that do not share a scale (the cell axis includes cells outside PT
+tubules), so peak positions differ between cells and tubules (Pigr 0.48 vs 0.68) for that reason alone; not yet a
+finding. Not tuned after seeing the human null.

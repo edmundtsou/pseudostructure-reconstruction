@@ -441,54 +441,62 @@ def panel_overlay(plt, gene_list, genes, grid, curves, out):
 
 
 def panel_sc(plt, args, genes, curves, out):
-    """COAST on single nuclei (fig4_sc.py): UMAP with the curve, label densities along it, and the Fig. 4b genes."""
+    """COAST on our own Visium HD cells (fig4_sc.py): for mouse and human, the PT cells in UMAP with the curve and the
+    S1/S2/S3 label densities along it; then the Fig. 4b genes along the mouse cell axis against the tubule axis."""
     import json
     from scipy.stats import gaussian_kde
 
-    sc_dir = Path(args.results_root) / args.out / 'sc'
-    nuc = pd.read_parquet(sc_dir / 'nuclei.parquet')
-    nodes = np.load(sc_dir / 'nodes.npy')
-    fits = pd.read_csv(sc_dir / 'curves.csv', index_col=[0, 1])
-    summ = json.loads((sc_dir / 'summary.json').read_text())
+    cell_dir = Path(args.results_root) / args.out / 'cells'
     fig = plt.figure(figsize=(SIZE['sc'][0] / 100, SIZE['sc'][1] / 100))
-    # UMAP, nuclei coloured by the authors' segment label, curve nodes on top
-    ax = fig.add_axes([0.03, 0.55, 0.44, 0.40])
-    order = np.random.default_rng(0).permutation(len(nuc))
-    ax.scatter(nuc.umap1.to_numpy()[order], nuc.umap2.to_numpy()[order], s=0.6, lw=0, rasterized=True,
-               c=[COLOURS[l] for l in nuc.label.to_numpy()[order]])
-    ax.plot(*nodes.T, '-o', color='black', ms=1.8, lw=0.9, mfc='white', mew=0.5)
-    ax.set_axis_off()
-    for i, seg in enumerate(SEGS):
-        ax.text(0.02, 0.98 - 0.07 * i, seg, transform=ax.transAxes, fontsize=6.5, color=COLOURS[seg],
-                weight='bold', va='top')
-    ax.set_title(f"{summ['n_nuclei']:,} PT nuclei, 3 male mice", fontsize=7, color=INK, pad=2)
-    # label densities along the axis
-    ax = fig.add_axes([0.58, 0.58, 0.39, 0.34])
-    grid = np.linspace(0, 1, 300)
-    for i, seg in enumerate(SEGS):
-        base = 2 - i
-        y = gaussian_kde(nuc.t[nuc.label == seg])(grid)
-        ax.fill_between(grid, base, base + 0.85 * y / y.max(), color=COLOURS[seg], alpha=0.45, lw=0)
-        ax.plot(grid, base + 0.85 * y / y.max(), color=COLOURS[seg], lw=0.9)
-        ax.axhline(base, color='#DDDDDD', lw=0.5, zorder=0)
-    ax.set_xlim(0, 1)
-    ax.set_ylim(0, 3)
-    ax.set_yticks([])
-    ax.spines['left'].set_visible(False)
-    ax.set_xticks([0, 0.5, 1])
-    ax.set_xlabel('pseudostructure (nuclei)', labelpad=1)
-    rho = summ['rho_by_donor'].values()
-    ax.set_title(f"ρ {min(rho):.2f}–{max(rho):.2f} per mouse", fontsize=7, color=INK, pad=2)
-    # the Fig. 4b genes along the nuclei axis (each mouse) and along the tubule axis (both control mice), each scaled
-    # to its own maximum: the two assays differ in depth and capture, so only shapes are compared
+    rows = [('mouse', 'Mouse control', 0.72), ('human', 'Human', 0.45)]
+    for species, name, y0 in rows:
+        d = cell_dir / species
+        cells = pd.read_parquet(d / 'cells.parquet')
+        nodes = np.load(d / 'nodes.npy')
+        summ = json.loads((d / 'summary.json').read_text())
+        # each cell coloured by the COAST label of the tubule its nucleus sits in (grey: no PT tubule)
+        seg = cells.tubule_label.fillna('').str.replace('-', '').to_numpy()
+        ax = fig.add_axes([0.03, y0, 0.40, 0.25])
+        order = np.random.default_rng(0).permutation(len(cells))
+        order = np.concatenate([order[~np.isin(seg[order], SEGS)], order[np.isin(seg[order], SEGS)]])
+        ax.scatter(cells.umap1.to_numpy()[order], cells.umap2.to_numpy()[order], s=0.3, lw=0, rasterized=True,
+                   c=[COLOURS.get(l, '#DDDDDD') if l in SEGS else '#DDDDDD' for l in seg[order]])
+        ax.plot(*nodes.T, '-o', color='black', ms=1.6, lw=0.8, mfc='white', mew=0.5)
+        ax.set_axis_off()
+        ax.set_title(f"{name}: {len(cells):,} PT cells", fontsize=7, color=INK, pad=2)
+        if species == 'mouse':
+            ax.text(1.0, 0.0, 'grey: not in a PT tubule', transform=ax.transAxes, fontsize=5.5, color=MUTED, ha='right')
+        if species == 'mouse':
+            for i, sg in enumerate(SEGS):
+                ax.text(0.0, 0.98 - 0.09 * i, sg, transform=ax.transAxes, fontsize=6.5, color=COLOURS[sg],
+                        weight='bold', va='top')
+        ax = fig.add_axes([0.55, y0 + 0.03, 0.42, 0.19])
+        grid = np.linspace(0, 1, 300)
+        for i, sg in enumerate(SEGS):
+            base = 2 - i
+            yv = gaussian_kde(cells.x_pt[seg == sg])(grid)
+            ax.fill_between(grid, base, base + 0.85 * yv / yv.max(), color=COLOURS[sg], alpha=0.45, lw=0)
+            ax.plot(grid, base + 0.85 * yv / yv.max(), color=COLOURS[sg], lw=0.9)
+            ax.axhline(base, color='#DDDDDD', lw=0.5, zorder=0)
+        ax.set_xlim(0, 1)
+        ax.set_ylim(0, 3)
+        ax.set_yticks([])
+        ax.spines['left'].set_visible(False)
+        ax.set_xticks([0, 0.5, 1])
+        ax.set_xlabel('pseudostructure (cells)', labelpad=1)
+        rho = list(summ['rho_tubule_pt_by_sample'].values())
+        ax.set_title(f"ρ {min(rho):.2f}–{max(rho):.2f} per section", fontsize=7, color=INK, pad=2)
+    # the Fig. 4b genes along the mouse cell axis (each section) and the tubule axis (both control mice), each scaled
+    # to its own maximum: cells and tubules differ in depth, so only shapes are compared
+    fits = pd.read_csv(cell_dir / 'mouse' / 'curves.csv', index_col=[0, 1])
     sc_c, tub_c = '#7A5195', SECTION_COLOURS['Ctrl1A2']
     xs = fits.columns.astype(float).to_numpy()
     shown = [g for g in OVERLAY if g in fits.index.get_level_values('gene')]
-    h = 0.40 / len(shown)
+    h = 0.30 / len(shown)
     for i, g in enumerate(shown):
-        ax = fig.add_axes([0.12, 0.06 + (len(shown) - 1 - i) * (h + 0.04), 0.85, h])
-        for d in fits.index.get_level_values(0).unique():
-            v = 2 ** fits.loc[(d, g)].to_numpy(float)
+        ax = fig.add_axes([0.12, 0.05 + (len(shown) - 1 - i) * (h + 0.035), 0.85, h])
+        for sec in fits.index.get_level_values(0).unique():
+            v = 2 ** fits.loc[(sec, g)].to_numpy(float)
             ax.plot(xs, v / np.nanmax(v), color=sc_c, lw=0.9, alpha=0.8)
         tub = np.mean([2 ** curves[m]['curve'][g] for m in MICE], 0)
         ax.plot(np.linspace(0, 1, len(tub)), tub / np.nanmax(tub), color=tub_c, lw=1.6)
@@ -501,8 +509,8 @@ def panel_sc(plt, args, genes, curves, out):
         if i == 0:
             from matplotlib.lines import Line2D
             ax.legend([Line2D([], [], color=sc_c, lw=0.9), Line2D([], [], color=tub_c, lw=1.6)],
-                      ['nuclei, per mouse', 'tubules, control mice'], loc='upper left', fontsize=6, frameon=False,
-                      handlelength=1.8, bbox_to_anchor=(0.0, 1.0))
+                      ['cells, per section', 'tubules, control mice'], loc='upper right', fontsize=6, frameon=False,
+                      handlelength=1.8)
     ax.set_xlabel('pseudostructure', labelpad=1)
     fig.savefig(out / 'f4_sc.png', facecolor='white')
     plt.close(fig)
