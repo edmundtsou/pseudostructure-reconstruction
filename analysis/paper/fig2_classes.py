@@ -30,7 +30,7 @@ import pandas as pd
 
 REPO = next(p for p in Path(__file__).resolve().parents if (p / 'pseudospace').is_dir())
 CLS = {'tubule_proximal': '#2F6FAE', 'tubule_distal': '#E3A21A', 'tubule_collecting': '#1E9E7A',
-       'glomerulus': '#D98BB6', 'tubule': '#3A3A3A'}
+       'glomerulus': '#D98BB6', 'tubule': '#5E3A8C'}
 MANUAL = {'Tubules': 'tubule_proximal', 'Tubules2': 'tubule_distal', 'Tubules3': 'tubule_collecting',
           'Glomeruli': 'glomerulus'}
 SEGMENTATION = {'Ctrl1A2': 'segmentations/v4fix/Ctrl1A2_v4fix.geojson', 'Ctrl1A4': 'segmentations/v4fix/Ctrl1A4_v4fix.geojson', 'IR2A2': 'segmentations/v4fix/IR2A2_v4fix.geojson',
@@ -209,16 +209,16 @@ def panel_tiles(args, out, cache):
     meta = {}
     gallery = pd.read_csv(Path(args.results_root) / 'paper_figures/fig2/gallery/tiles.csv').set_index('sample')
     windows = {'held_out': ('Ctrl1A2', wx, wy)}
+
+    def captured(sample):
+        # search only inside the Visium HD capture area, so the tile shows cross-sections that enter the analysis
+        c = json.loads((Path(args.results_root) / f'paper_figures/fig1/cache/bins/{sample}_capture.json').read_text())
+        return [(c['x0'], c['y0'], c['x1'], c['y1'])]
+    four = ['tubule_proximal', 'tubule_distal', 'tubule_collecting', 'glomerulus']
     ctrl4 = features(Path(args.data_root) / SEGMENTATION['Ctrl1A4'])
-    xs = [f[2].centroid.x for f in ctrl4]
-    ys = [f[2].centroid.y for f in ctrl4]
-    windows['unseen'] = ('Ctrl1A4', *best_window(ctrl4, side, [(min(xs), min(ys), max(xs), max(ys))], 400,
-                                                ['tubule_proximal', 'tubule_distal', 'tubule_collecting', 'glomerulus']))
+    windows['unseen'] = ('Ctrl1A4', *best_window(ctrl4, side, captured('Ctrl1A4'), 400, four))
     ir2 = features(Path(args.data_root) / SEGMENTATION['IR2A2'])
-    xs = [f[2].centroid.x for f in ir2]
-    ys = [f[2].centroid.y for f in ir2]
-    windows['injured2'] = ('IR2A2', *best_window(ir2, side, [(min(xs), min(ys), max(xs), max(ys))], 400,
-                                                 ['tubule_proximal', 'tubule_distal', 'tubule_collecting', 'glomerulus']))
+    windows['injured2'] = ('IR2A2', *best_window(ir2, side, captured('IR2A2'), 400, four))
     windows['injured'] = ('IR2A4', float(gallery.loc['IR2A4', 'x0_px']), float(gallery.loc['IR2A4', 'y0_px']))
     windows['human'] = ('HUK1_MED1', float(gallery.loc['HUK1_MED1', 'x0_px']), float(gallery.loc['HUK1_MED1', 'y0_px']))
     for key, (sample, x0, y0) in windows.items():
@@ -270,7 +270,7 @@ def panel_maps(args, out, cache):
         cap = json.loads((fig1 / 'bins' / f'{sample}_capture.json').read_text())
         inside = np.zeros((h, w), bool)
         inside[max(int(cap['y0'] * s), 0):int(cap['y1'] * s), max(int(cap['x0'] * s), 0):int(cap['x1'] * s)] = True
-        tissue = a.mean(2) < 225
+        tissue = (a.mean(2) < 225) | (np.ptp(a, 2) > 18)    # pale human cortex is caught by its stain colour
         out_cap = tissue & ~inside                        # grey, desaturated: pink would read as glomerulus
         a[out_cap] = (0.35 * a[out_cap].mean(1) + 0.65 * 214)[:, None]
         a[tissue & inside] = 0.35 * a[tissue & inside] + 0.65 * 235      # faint H&E under the fills
