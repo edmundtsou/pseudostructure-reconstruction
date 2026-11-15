@@ -214,9 +214,30 @@ def binned_markers(results_root, run, samples, bins=100, min_units=5):
     mean = np.vstack([np.bincount(b, weights=expr[g].to_numpy(), minlength=bins) / np.maximum(count, 1) for g in genes])
     mean[:, count < min_units] = np.nan
     z = (mean - np.nanmean(mean, 1, keepdims=True)) / np.nanstd(mean, 1, keepdims=True)
-    label = pd.Series(pos.group.to_numpy()).groupby(b).agg(lambda s: s.value_counts().index[0]).reindex(range(bins))
-    label[count < min_units] = None
-    return z, label
+    return z, band_labels(pos.group, b, count >= min_units)
+
+
+def band_labels(group, b, ok, min_span=3):
+    """Label of each bin for the band: the label holding the largest share of its own units there, so a label's
+    size does not decide it (the argmax of the label densities in the next panel). A run shorter than min_span bins
+    takes the label of whichever neighbouring run has the larger share there, so stray units leave no blip.
+    Bins with too few units (ok False) stay empty."""
+    ct = pd.crosstab(np.asarray(b), np.asarray(group)).reindex(range(len(ok)), fill_value=0)
+    share = ct.div(ct.sum(0).clip(lower=1), axis=1)
+    label = share.idxmax(1).where(ok)
+    runs = []                                    # [label, first bin, last bin] of each run of filled bins
+    for i, g in label.items():
+        if isinstance(g, str) and runs and runs[-1][0] == g and runs[-1][2] == i - 1:
+            runs[-1][2] = i
+        elif isinstance(g, str):
+            runs.append([g, i, i])
+    for k, r in enumerate(runs):
+        if r[2] - r[1] + 1 < min_span and len(runs) > 1:
+            near = {runs[j][0] for j in (k - 1, k + 1) if 0 <= j < len(runs)}
+            r[0] = max(near, key=lambda g: share.loc[r[1]:r[2], g].sum())
+    for g, a, z in runs:
+        label.loc[a:z] = g
+    return label
 
 
 def panel_c(args, plt, out):

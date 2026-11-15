@@ -37,3 +37,15 @@ def test_densest_window_finds_the_cluster():
     xy = np.vstack([rng.uniform(0, 1000, (200, 2)), rng.uniform(600, 650, (60, 2))])
     x, y = densest_window(xy, 100, 10)
     assert 550 <= x <= 610 and 550 <= y <= 610
+
+
+def test_band_gives_a_small_label_its_bins_and_absorbs_strays():
+    from fig3_panels import band_labels
+
+    # A: 1000 units over bins 0-6; B: 30 units in bins 3-5, outnumbered there by A; C: 200 units in bins 7-9 plus
+    # one stray unit in bin 1
+    group = np.array(['A'] * 1000 + ['B'] * 30 + ['C'] * 201)
+    b = np.array(list(np.arange(1000) % 7) + list(3 + np.arange(30) % 3) + list(7 + np.arange(200) % 3) + [1])
+    lab = band_labels(group, b, np.ones(10, bool)).tolist()
+    assert lab[:6] == ['A'] * 3 + ['B'] * 3
+    assert lab[7:] == ['C'] * 3
