@@ -4,10 +4,12 @@
  tiles    panel c gallery: outlines coloured by the predicted class
             held-out    Ctrl1A2 validation block, manual outlines in white under the model's, tile PQ
             unseen      Ctrl1A4 (no section of it was used in training)
+            injured2    IR2A2, chosen like the unseen tile
             injured     IR2A4 window of fig2_gallery.py (most PT-S3 units)
             human       HUK1_MED1 window of fig2_gallery.py (the human model separates tubule from glomerulus only)
- maps     panel e: the four mouse sections, QC-retained cross-sections filled by class, the area outside the
-          Visium HD capture area in grey; class counts for the bars
+ maps     the four mouse sections and HUK1_MED1, QC-retained cross-sections filled by class, the area outside the
+          Visium HD capture area in grey; class counts for the bars, and the thumbnail scale and crop origin so the
+          composer can mark each tile's window on its map
 
 Classes: mouse model background/proximal/distal/collecting/glomerulus; human model background/tubule/glomerulus.
 Manual labels Tubules/Tubules2/Tubules3/Glomeruli are proximal/distal/collecting/glomerulus (kidney_panoptic README).
@@ -212,10 +214,15 @@ def panel_tiles(args, out, cache):
     ys = [f[2].centroid.y for f in ctrl4]
     windows['unseen'] = ('Ctrl1A4', *best_window(ctrl4, side, [(min(xs), min(ys), max(xs), max(ys))], 400,
                                                 ['tubule_proximal', 'tubule_distal', 'tubule_collecting', 'glomerulus']))
+    ir2 = features(Path(args.data_root) / SEGMENTATION['IR2A2'])
+    xs = [f[2].centroid.x for f in ir2]
+    ys = [f[2].centroid.y for f in ir2]
+    windows['injured2'] = ('IR2A2', *best_window(ir2, side, [(min(xs), min(ys), max(xs), max(ys))], 400,
+                                                 ['tubule_proximal', 'tubule_distal', 'tubule_collecting', 'glomerulus']))
     windows['injured'] = ('IR2A4', float(gallery.loc['IR2A4', 'x0_px']), float(gallery.loc['IR2A4', 'y0_px']))
     windows['human'] = ('HUK1_MED1', float(gallery.loc['HUK1_MED1', 'x0_px']), float(gallery.loc['HUK1_MED1', 'y0_px']))
     for key, (sample, x0, y0) in windows.items():
-        feats = ctrl4 if sample == 'Ctrl1A4' else features(Path(args.data_root) / SEGMENTATION[sample])
+        feats = {'Ctrl1A4': ctrl4, 'IR2A2': ir2}.get(sample) or features(Path(args.data_root) / SEGMENTATION[sample])
         pred = in_window(feats, x0, y0, side)
         manual = in_window(manual_all, x0, y0, side) if key == 'held_out' else None
         img = outline_tile(he_crop(args, sample, x0, y0, side, cache), pred, x0, y0, side, OUT_PX, manual=manual)
@@ -236,17 +243,19 @@ def panel_maps(args, out, cache):
     import h5py
     from PIL import Image, ImageDraw
 
-    with h5py.File(Path(args.results_root) / 'coast_runs/aki/02_qc/units_qc.h5ad', 'r') as h:
-        o = h['obs']
+    def retained(run):
+        with h5py.File(Path(args.results_root) / f'coast_runs/{run}/02_qc/units_qc.h5ad', 'r') as h:
+            o = h['obs']
 
-        def col(k):
-            v = o[k]
-            return v['categories'][:].astype(str)[v['codes'][:]] if isinstance(v, h5py.Group) else v[:]
-        qc = pd.DataFrame({k: col(k) for k in ('sample', 'seg_class', 'qc_retained', 'feature_index')})
-    qc = qc[qc.qc_retained.astype(bool)]
+            def col(k):
+                v = o[k]
+                return v['categories'][:].astype(str)[v['codes'][:]] if isinstance(v, h5py.Group) else v[:]
+            qc = pd.DataFrame({k: col(k) for k in ('sample', 'seg_class', 'qc_retained', 'feature_index')})
+        return qc[qc.qc_retained.astype(bool)]
+    qc = pd.concat([retained('aki'), retained('hvm').query("sample == 'HUK1_MED1'")])
     meta = {}
     fig1 = Path(args.results_root) / 'paper_figures/fig1/cache'
-    for sample in ('Ctrl1A2', 'Ctrl1A4', 'IR2A2', 'IR2A4'):
+    for sample in ('Ctrl1A2', 'Ctrl1A4', 'IR2A2', 'IR2A4', 'HUK1_MED1'):
         tif = Path(args.he_root) / f'{HE[sample]}.tif'
         full_w = int(subprocess.check_output(['vipsheader', '-f', 'width', str(tif)]))
         th = cache / f'{sample}_map_he.png'
@@ -274,9 +283,10 @@ def panel_maps(args, out, cache):
                 _, g = feats[fi]
                 draw.polygon([(x * s, y * s) for x, y in g.exterior.coords], fill=rgb(CLS[cls]))
         ys, xs = np.where(tissue)
-        img = img.crop((max(xs.min() - 20, 0), max(ys.min() - 20, 0), min(xs.max() + 20, w), min(ys.max() + 20, h)))
-        img.save(out / f'map_{sample}.png')
-        meta[sample] = {'retained': int(len(keep)), 'classes': keep.seg_class.value_counts().to_dict()}
+        crop = (max(xs.min() - 20, 0), max(ys.min() - 20, 0), min(xs.max() + 20, w), min(ys.max() + 20, h))
+        img.crop(crop).save(out / f'map_{sample}.png')
+        meta[sample] = {'retained': int(len(keep)), 'classes': keep.seg_class.value_counts().to_dict(),
+                        'scale': s, 'crop_px': [int(c) for c in crop]}
     return meta
 
 
