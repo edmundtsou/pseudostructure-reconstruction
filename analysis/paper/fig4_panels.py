@@ -459,17 +459,22 @@ def panel_sc(plt, args, genes, curves, out):
         tub = load_positions(args.results_root, run)
         tub = tub[tub['sample'].isin(cells['sample'].unique())]
         groups = [g for g in GROUP_ORDER if (cells.tubule_group == g).sum() >= 50 and (tub.group == g).sum() >= 50]
+        # UMAP coloured by the cells' own COAST cluster labels (Leiden + marker panels, as for tubules), each label
+        # written at the median of its cells; the densities on the right are by the tubule each nucleus sits in
         ax = fig.add_axes([0.0, y0 + 0.04, 0.36, 0.36])
-        seg = cells.tubule_group.fillna('').to_numpy()
+        grp = cells.group.fillna('').to_numpy()
         order = np.random.default_rng(0).permutation(len(cells))
-        order = np.concatenate([order[seg[order] == ''], order[seg[order] != '']])
         ax.scatter(cells.umap1.to_numpy()[order], cells.umap2.to_numpy()[order], s=0.15, lw=0, rasterized=True,
-                   c=[COLOURS.get(g, '#E3E3E3') for g in seg[order]])
-        ax.plot(*nodes.T, '-o', color='black', ms=1.4, lw=0.7, mfc='white', mew=0.4)
+                   c=[COLOURS.get(g, '#E3E3E3') for g in grp[order]])
+        ax.plot(*nodes.T, '-o', color='black', ms=1.4, lw=0.7, mfc='white', mew=0.4, zorder=3)
+        for lab, part in cells.groupby('label'):
+            ax.text(part.umap1.median(), part.umap2.median(), lab, fontsize=6, weight='bold', ha='center',
+                    va='center', color=INK, zorder=4,
+                    bbox=dict(boxstyle='round,pad=0.15', fc='white', ec='none', alpha=0.75))
         ax.set_axis_off()
-        ax.set_title(f"{name}: {len(cells):,} cells", fontsize=7, color=INK, pad=1)
+        ax.set_title(f"{name}: {len(cells):,} cells, by cell cluster", fontsize=7, color=INK, pad=1)
         grid = np.linspace(0, 1, 300)
-        for j, (title, t, g) in enumerate([('cells', cells.t, cells.tubule_group), ('tubules', tub.t, tub.group)]):
+        for j, (title, t, g) in enumerate([('cells, by tubule', cells.t, cells.tubule_group), ('tubules', tub.t, tub.group)]):
             ax = fig.add_axes([0.42 + j * 0.30, y0 + 0.03, 0.26, 0.38])
             for i, grp in enumerate(groups):
                 base = len(groups) - 1 - i
