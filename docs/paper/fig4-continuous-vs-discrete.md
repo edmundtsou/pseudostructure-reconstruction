@@ -353,3 +353,22 @@ purity (ALDOB, GPX3, GATM at one end; CA12 rho 0.55, IGFBP5, DEFB1, SLC12A1, SLC
 Open: the gene overlay compares two rank-scaled axes that do not share a scale (the cell axis includes cells outside PT
 tubules), so peak positions differ between cells and tubules (Pigr 0.48 vs 0.68) for that reason alone; not yet a
 finding. Not tuned after seeing the human null.
+
+### Panel c reframed: cells against tubules, whole nephron (user, 2026-11-15)
+
+User: "don't do pt only, do all cells right. the exact same process using the coast package ... show why we need tubule
+segmentation." The PT-only pass above is withdrawn. `fig4_sc.py` now runs `coast_fit.two_pass` on cells exactly as on
+tubules (cells have no polygon, so the doublet step has no counterpart; cell QC replaces it) and scores both axes by the
+Fig. 3 measure (per-section rho of position against the nephron rank of the label group).
+
+| section | tubules | cells, by tubule label | cells, by own label |
+|---|---|---|---|
+| Ctrl1A2 | 0.950 | 0.575 | 0.453 |
+| Ctrl1A4 | 0.947 | 0.644 | 0.536 |
+| human 1 (COR) | 0.945 | 0.856 | 0.708 |
+| human 2 (MED) | 0.944 | 0.880 | 0.745 |
+
+Cells: 145,926 mouse and 99,547 human after pass 1; 81,424 and 75,760 sit in a labelled tubule. On mouse cells the PT
+runs backwards (median t by tubule group S1 0.19, S2 0.13, S3 0.05) and AL splits into two modes (one past CD); the
+tubule axis keeps every segment in order. Human cells keep the coarse order, but S1/S2/S3 overlap (medians 0.13/0.16/0.17
+against 0.07/0.11/0.19 on tubules).

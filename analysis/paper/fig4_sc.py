@@ -1,22 +1,21 @@
-"""Fig. 4c: COAST on single cells of our own Visium HD sections, the same method as on tubules with cells as units.
+"""Fig. 4c: why tubules. COAST run on single cells of our own Visium HD sections, exactly as on tubules.
 
 Cells are bin2cell reconstructions (StarDist nuclei on the H&E, expanded by <= 4 bins; analysis/bin2cell/bin2cell_run.py,
 the same parameters for every section). Mouse: the two control sections after the cell QC of the bin2cell bundle
 (nucleus-anchored, >= 200 UMI, >= 150 genes, 3 MADs of log1p counts and genes, <= 25 % mitochondrial, 10-600 um^2).
-Human: both healthy-cortex slices of the one donor, through the same QC here, with genes renamed to their shared 1:1
-mouse orthologs as in the hvm tubule fit. Each species is fitted on its own by coast_fit.two_pass, unchanged from the
-tubule fits: pass 1 labels every Leiden cluster with the marker panels, pass 2 refits the nephron cells, and the
-elastic curve is oriented from the early to the late anchor genes. PT cells (pass-1 labels PT-S1/S2/S3) are then
-rank-scaled to [0, 1] along the curve, as the tubule PT axis of Fig. 4 is, and the Fig. 4b genes are fitted along it with
-COAST's penalised NB GAM (coast.tl.fit_curves). For mouse, the bundle's own marker cell types (PT_S1/S2/S3 ...)
-are carried along as an independent check of the COAST cell labels.
+Human: both healthy-cortex slices of the one donor, through the same QC here, genes renamed to their shared 1:1 mouse
+orthologs as in the hvm tubule fit. Each species is fitted on its own by coast_fit.two_pass, unchanged from the tubule
+fits (gene filter, normalisation, Harmony, Leiden + marker labels, nephron units refitted, ElPiGraph curve oriented
+from the early to the late anchors). Cells have no polygon, so the tubule doublet step has no cell counterpart.
+The cell axis and the tubule axis are scored by the Fig. 3 measure (per-section Spearman rho of position against the
+nephron rank of the label group), cells by their own label and by the label of the tubule their nucleus sits in.
 
-  python analysis/paper/fig4_sc.py [--data-root <dir>] [--results-root <dir>] [--species mouse,human]
+  python analysis/paper/fig4_sc.py [--data-root <dir>] [--results-root <dir>] [--species mouse,human] [--labels-only]
 
 Reads <data-root>/bin2cell/mouse_bundle/02_qc_integration_annotation_composition/checkpoints/ (mouse) and
 <results-root>/bin2cell/<slice>/<slice>_bin2cell_cells_unfiltered.h5ad (human). Writes
-<results-root>/paper_figures/fig4/cells/<species>/: cells.parquet (sample, labels, t, PT axis, UMAP), nodes.npy (curve
-in UMAP), curves.csv (sample x gene x PT position), summary.json.
+<results-root>/paper_figures/fig4/cells/<species>/: cells.parquet (sample, labels, t, UMAP), nodes.npy (curve in UMAP),
+summary.json (cell counts, rho of cells and tubules per section).
 """
 from __future__ import annotations
 
@@ -34,8 +33,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parent))
 MOUSE = {'Ctrl_1A2': 'Ctrl1A2', 'Ctrl_1A4': 'Ctrl1A4'}
 HUMAN = {'HUK1_COR_1': 'HUK1_COR1', 'HUK1_MED_1': 'HUK1_MED1'}
 BUNDLE = 'bin2cell/mouse_bundle/02_qc_integration_annotation_composition/checkpoints'
-PT = ['PT-S1', 'PT-S2', 'PT-S3']
-GENES = ['Pigr', 'Slc22a7', 'Cyp4a12a']
 # cell QC of the bin2cell bundle (run_config_02_qc.json)
 MIN_COUNTS, MIN_GENES, N_MADS, MAX_PCT_MT, AREA_UM2 = 200, 150, 3.0, 25.0, (10.0, 600.0)
 SEED = 0
@@ -46,7 +43,6 @@ def parse_args(argv=None):
     p.add_argument('--data-root', default=os.environ.get('PSEUDOSPACE_DATA_ROOT', str(REPO / 'data')))
     p.add_argument('--results-root', default=os.environ.get('PSEUDOSPACE_RESULTS_ROOT', str(REPO / 'results')))
     p.add_argument('--species', default='mouse,human')
-    p.add_argument('--jobs', type=int, default=8)
     p.add_argument('--labels-only', action='store_true', help='only add the tubule labels to an existing fit')
     return p.parse_args(argv)
 
@@ -104,75 +100,31 @@ def load_human(results_root: Path):
     return a, ledger
 
 
-def fit_species(a, run: str, out: Path, jobs: int, extra: dict):
-    import coast
+def fit_species(a, run: str, out: Path, extra: dict):
+    """COAST on cells exactly as on tubules (coast_fit.two_pass: filter genes, normalise, Harmony, Leiden + marker
+    labels, nephron cells refitted, ElPiGraph curve oriented early -> late)."""
     import scanpy as sc
     from scipy.spatial import cKDTree
-    from scipy.stats import spearmanr
-    from coast_fit import _pass, exclude_regex, panels, two_pass
+    from coast_fit import panels, two_pass
 
     P = panels(run)
     a.layers['counts'] = a.X.copy()
     a.obs['sample'] = a.obs['sample'].astype('category')
     a.obs['condition'] = pd.Categorical(['all'] * a.n_obs)
     p1, p2, _ = two_pass(a, P)
-    # the whole-nephron curve, recorded only: on cells it does not order the nephron (2026-11-15, mouse rho 0.45-0.54,
-    # PT running S3 -> S1), so the panel uses a PT curve, as the earlier single-nucleus panel did
-    order = {l: i for i, l in enumerate(P['segment_order'])}
-    t_neph = p2.obs['pseudostructure'].to_numpy(float)
-    rank_neph = p2.obs['segment_class'].astype(str).map(order).to_numpy(float)
-    s_neph = p2.obs['sample'].astype(str).to_numpy()
-    rho_neph = {s: float(spearmanr(t_neph[(s_neph == s) & np.isfinite(rank_neph)],
-                                   rank_neph[(s_neph == s) & np.isfinite(rank_neph)]).statistic) for s in np.unique(s_neph)}
-
-    # PT pass: the pass-1 PT cells through the same COAST steps, curve oriented from the PT-S1 to the PT-S3 panel
-    pt_cells = p1.obs_names[p1.obs['segment_class'].astype(str).isin(PT)]
-    units = a[pt_cells].copy()
-    units.X = units.layers['counts'].copy()
-    p3 = _pass(units, P, 'condition', exclude_regex(), 'leiden_pt')
-    p3.obs['segment_class'] = p1.obs.loc[p3.obs_names, 'segment_class'].astype(str).astype('category')
-    coast.tl.pseudostructure(p3, early_genes=P['label_panels']['PT-S1'], late_genes=P['label_panels']['PT-S3'],
-                             seed=SEED)
-    t = p3.obs['pseudostructure'].to_numpy(float)
-    label = p3.obs['segment_class'].astype(str).to_numpy()
-    sample = p3.obs['sample'].astype(str).to_numpy()
-
-    sc.pp.neighbors(p3, use_rep='X_harmony', n_neighbors=15, random_state=SEED)
-    sc.tl.umap(p3, random_state=SEED)
-    umap = p3.obsm['X_umap']
-    nearest = cKDTree(p3.uns['coast']['nodes']).query(p3.obsm['X_harmony'])[1]
-    np.save(out / 'nodes.npy', np.array([np.median(umap[nearest == k], 0) for k in range(len(p3.uns['coast']['nodes']))
+    sc.pp.neighbors(p2, use_rep='X_harmony', n_neighbors=15, random_state=SEED)
+    sc.tl.umap(p2, random_state=SEED)
+    umap = p2.obsm['X_umap']
+    nodes = p2.uns['coast']['nodes']
+    nearest = cKDTree(nodes).query(p2.obsm['X_harmony'])[1]
+    np.save(out / 'nodes.npy', np.array([np.median(umap[nearest == k], 0) for k in range(len(nodes))
                                          if (nearest == k).any()]))
-
-    # PT axis rank-scaled to [0, 1], as the tubule PT axis of Fig. 4
-    x = (pd.Series(t).rank(method='average').to_numpy() - 0.5) / len(t)
-    cells = pd.DataFrame({'sample': sample, 'label': label, 'bundle_type': p3.obs['bundle_type'].astype(str).to_numpy(),
-                          't': t, 'x_pt': x, 'umap1': umap[:, 0], 'umap2': umap[:, 1]}, index=p3.obs_names)
+    cells = pd.DataFrame({'sample': p2.obs['sample'].astype(str), 'label': p2.obs['segment_class'].astype(str),
+                          'bundle_type': p2.obs['bundle_type'].astype(str), 't': p2.obs['pseudostructure'].astype(float),
+                          'umap1': umap[:, 0], 'umap2': umap[:, 1]}, index=p2.obs_names.copy())
     cells.to_parquet(out / 'cells.parquet')
-
-    src = a[p3.obs_names]
-    genes = [g for g in GENES if g in src.var_names]
-    mt = src.var_names.str.match(r'^mt-', case=False)
-    b = src[:, genes].copy()
-    b.obs['x'] = x
-    b.obs['lib'] = np.asarray(src.layers['counts'][:, ~mt].sum(1)).ravel()
-    curves = coast.tl.fit_curves(b, genes, x='x', sample_key='sample', library='lib', limits=(0, 1), n_points=201,
-                                 n_jobs=jobs)
-    curves.to_csv(out / 'curves.csv')
-
-    rank = pd.Series(label).map({l: i for i, l in enumerate(PT)}).to_numpy(float)
-    pt = np.ones(len(t), bool)
-    summary = {
-        'n_cells_pass1': int(p1.n_obs), 'n_cells_nephron': int(p2.n_obs), 'n_pt_cells': int(len(t)),
-        'per_sample_label': pd.crosstab(cells['sample'], cells['label']).to_dict(orient='index'),
-        'rho_pt_by_sample': {s: float(spearmanr(t[sample == s], rank[sample == s]).statistic)
-                             for s in np.unique(sample)},
-        'whole_nephron_curve_rho_by_sample': rho_neph,
-        'median_x_pt': cells.groupby('label')['x_pt'].median().round(3).to_dict(), **extra}
-    if (cells.bundle_type != 'NA').any():   # COAST cluster labels against the bundle's own cell types (PT cells)
-        summary['bundle_vs_coast_pt'] = pd.crosstab(cells.label[pt], cells.bundle_type[pt]).to_dict(orient='index')
-    (out / 'summary.json').write_text(json.dumps(summary, indent=1))
-    print(json.dumps({k: v for k, v in summary.items() if k != 'per_sample_label'}, indent=1), flush=True)
+    (out / 'summary.json').write_text(json.dumps({'n_cells_qc': int(a.n_obs), 'n_cells_pass1': int(p1.n_obs),
+                                                  'n_cells_nephron': int(p2.n_obs), **extra}, indent=1))
 
 
 def tubule_labels(cells: pd.DataFrame, species: str, data_root: Path, results_root: Path) -> pd.Series:
@@ -209,22 +161,33 @@ def tubule_labels(cells: pd.DataFrame, species: str, data_root: Path, results_ro
 
 
 def label_summary(out: Path, species: str, data_root: Path, results_root: Path):
-    """Add the tubule labels to cells.parquet and the PT order of the cell axis against them to summary.json."""
-    from scipy.stats import spearmanr
+    """Order of the cell axis and of the tubule axis, by the Fig. 3 measure: per section, Spearman rho of position
+    against the nephron rank of the label group (PTS1 ... CD). Cells are ranked by their own COAST label and by the
+    label of the tubule their nucleus sits in; tubules by their own label."""
+    from fig3_common import GROUP, RANK, load_positions, section_rho
     cells = pd.read_parquet(out / 'cells.parquet')
     cells['tubule_label'] = tubule_labels(cells, species, data_root, results_root)
+    cells['group'] = cells.label.map(GROUP)
+    cells['tubule_group'] = cells.tubule_label.map(GROUP)
     cells.to_parquet(out / 'cells.parquet')
-    rank = cells.tubule_label.map({l: i for i, l in enumerate(PT)})
-    ok = rank.notna()
+    run = 'aki' if species == 'mouse' else 'hvm'
+    tub = load_positions(results_root, run)
+    secs = sorted(cells['sample'].unique())
+    tub = tub[tub['sample'].isin(secs)]
+    rho = lambda coord, table: section_rho(coord, table, secs).set_index('sample')['rho'].round(3).to_dict()
     summ = json.loads((out / 'summary.json').read_text())
-    summ['cells_in_pt_tubule'] = cells[ok].groupby('sample').size().to_dict()
-    summ['cells_by_tubule_label'] = cells.tubule_label.fillna('none').value_counts().to_dict()
-    summ['rho_tubule_pt_by_sample'] = {s: float(spearmanr(g.x_pt, rank[g.index]).statistic)
-                                      for s, g in cells[ok].groupby('sample')}
-    summ['median_x_pt_by_tubule_label'] = cells[ok].groupby('tubule_label')['x_pt'].median().round(3).to_dict()
+    summ.update({
+        'rho_cells_own_label': rho(cells.t, cells.assign(rank=cells.group.map(RANK))),
+        'rho_cells_tubule_label': rho(cells.t, cells.assign(rank=cells.tubule_group.map(RANK))),
+        'rho_tubules': rho(tub.t, tub),
+        'cells_in_labelled_tubule': cells.tubule_group.notna().groupby(cells['sample']).sum().astype(int).to_dict(),
+        'cells_by_group': cells.group.value_counts().to_dict(),
+        'median_t_cells_by_tubule_group': cells.groupby('tubule_group')['t'].median().round(3).to_dict(),
+        'median_t_tubules_by_group': tub.groupby('group')['t'].median().round(3).to_dict()})
+    if (cells.bundle_type != 'NA').any():
+        summ['bundle_vs_coast'] = pd.crosstab(cells.label, cells.bundle_type).to_dict(orient='index')
     (out / 'summary.json').write_text(json.dumps(summ, indent=1))
-    print(species, {k: summ[k] for k in ('cells_in_pt_tubule', 'rho_tubule_pt_by_sample', 'median_x_pt_by_tubule_label')},
-          flush=True)
+    print(species, {k: v for k, v in summ.items() if k.startswith(('rho', 'median', 'cells_in'))}, flush=True)
 
 
 def main(argv=None):
@@ -235,10 +198,10 @@ def main(argv=None):
         out.mkdir(parents=True, exist_ok=True)
         if not args.labels_only:
             if species == 'mouse':
-                fit_species(load_mouse(Path(args.data_root)), 'aki', out, args.jobs, {})
+                fit_species(load_mouse(Path(args.data_root)), 'aki', out, {})
             else:
                 a, ledger = load_human(Path(args.results_root))
-                fit_species(a, 'hvm', out, args.jobs, {'qc': ledger})
+                fit_species(a, 'hvm', out, {'qc': ledger})
         label_summary(out, species, Path(args.data_root), Path(args.results_root))
 
 
