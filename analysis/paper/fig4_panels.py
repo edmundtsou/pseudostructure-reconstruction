@@ -451,11 +451,15 @@ def panel_sc(plt, args, genes, curves, out):
     cell_dir = Path(args.results_root) / args.out / 'cells'
     fig = plt.figure(figsize=(SIZE['sc'][0] / 100, SIZE['sc'][1] / 100))
     summ = {}
-    for species, name, run, y0 in [('mouse', 'Mouse control', 'aki', 0.53), ('human', 'Human', 'hvm', 0.04)]:
-        d = cell_dir / species
+    # cells of the joint cell runs, as the tubule fits: aki (control + AKI mice) shown for the control sections,
+    # hvm (control mice + human) shown for the human slices
+    for shown, name, run, y0 in [(('Ctrl1A2', 'Ctrl1A4'), 'Mouse control', 'aki', 0.53),
+                                 (('HUK1_COR1', 'HUK1_MED1'), 'Human', 'hvm', 0.04)]:
+        d = cell_dir / run
         cells = pd.read_parquet(d / 'cells.parquet')
+        cells = cells[cells['sample'].isin(shown)]
         nodes = np.load(d / 'nodes.npy')
-        summ[species] = json.loads((d / 'summary.json').read_text())
+        summ[run] = json.loads((d / 'summary.json').read_text())
         tub = load_positions(args.results_root, run)
         tub = tub[tub['sample'].isin(cells['sample'].unique())]
         groups = [g for g in GROUP_ORDER if (cells.tubule_group == g).sum() >= 50 and (tub.group == g).sum() >= 50]

@@ -376,3 +376,28 @@ Panel c draws no rho (user: "we can visually see"); the numbers stay in summary.
 run S3 -> S1: `coast.tl.pseudostructure` orients only the whole curve (flip if t falls with late - early score; early =
 PT markers, late = CD markers), the same rule as for tubules. The order inside the PT comes from the path ElPiGraph
 takes, which on mouse cells enters PT at S3 and leaves through S1 toward the distal segments.
+
+### Cells in the same joint runs as the tubules, CPU and GPU (2026-11-15)
+
+User: the cell fits must make the same comparison as the tubule fits. `fig4_sc.py` now builds the two tubule runs from
+cells: aki = the four mouse sections (Control, IR), hvm = the control mice and the human slices on the shared 1:1
+orthologs (Mouse, Human); Harmony on section, variable genes within condition, as `coast_fit.two_pass`. Panel c shows
+the control sections of aki and the human slices of hvm. `fig4_sc_gpu.py` runs the same code with PCA, Harmony,
+neighbours, UMAP and Leiden from rapids-singlecell 0.13.4 (RAPIDS 26.4; env `rapids-sc`) and writes `cells_gpu/`.
+Wall time for both runs in parallel: GPU 15 min, CPU about 25-30 min (ElPiGraph, marker scoring and loading stay on CPU).
+
+rho with nephron order (Fig. 3 measure; cells by the label of the tubule their nucleus sits in):
+
+| section | tubules CPU | tubules GPU | cells CPU | cells GPU |
+|---|---|---|---|---|
+| aki Ctrl1A2 / Ctrl1A4 | 0.950 / 0.947 | 0.939 / 0.943 | 0.289 / 0.461 | 0.749 / 0.890 |
+| aki IR2A2 / IR2A4 | 0.939 / 0.971 | 0.936 / 0.963 | 0.501 / 0.530 | 0.831 / 0.861 |
+| hvm Ctrl1A2 / Ctrl1A4 | 0.938 / 0.948 | 0.897 / 0.918 | 0.362 / 0.591 | 0.347 / 0.429 |
+| hvm human 1 / human 2 | 0.945 / 0.944 | 0.913 / 0.910 | 0.553 / 0.533 | 0.576 / 0.611 |
+
+Tubules reproduce across the two implementations (shared units: Spearman of t 0.99 aki / 0.985 hvm, label agreement 91 %).
+Cells do not: in aki the cells kept for the curve halve on CPU (about 20k vs 45k per section in a labelled tubule) and
+the PT order flips (CPU medians S1 0.55, S2 0.50, S3 0.42). Panel c is drawn from the CPU (package) cell runs.
+Harmony check (pass-1 UMAPs by condition; mixing = own-condition neighbour share over the condition's share within each
+pass-1 label, 1 = random): tubules aki control 3.21 -> 1.92, AKI 1.62 -> 1.01; hvm human 2.31 -> 1.71, mouse 2.04 -> 1.27.
+Cells start less separated (aki 1.73 / 1.52, hvm 1.58 / 1.63 on CPU) and change little.
