@@ -372,3 +372,7 @@ Cells: 145,926 mouse and 99,547 human after pass 1; 81,424 and 75,760 sit in a l
 runs backwards (median t by tubule group S1 0.19, S2 0.13, S3 0.05) and AL splits into two modes (one past CD); the
 tubule axis keeps every segment in order. Human cells keep the coarse order, but S1/S2/S3 overlap (medians 0.13/0.16/0.17
 against 0.07/0.11/0.19 on tubules).
+Panel c draws no rho (user: "we can visually see"); the numbers stay in summary.json and this table. Why mouse cells
+run S3 -> S1: `coast.tl.pseudostructure` orients only the whole curve (flip if t falls with late - early score; early =
+PT markers, late = CD markers), the same rule as for tubules. The order inside the PT comes from the path ElPiGraph
+takes, which on mouse cells enters PT at S3 and leaves through S1 toward the distal segments.

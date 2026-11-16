@@ -443,7 +443,7 @@ def panel_overlay(plt, gene_list, genes, grid, curves, out):
 def panel_sc(plt, args, genes, curves, out):
     """Cells against tubules (fig4_sc.py): COAST run the same way on bin2cell cells as on tubules. Per species, the
     cells in UMAP with the curve, coloured by the segment of the tubule each nucleus sits in; where each segment falls
-    along the cell axis and along the tubule axis; then the per-section rho of both axes (the Fig. 3 measure)."""
+    along the cell axis and along the tubule axis. The per-section rho of both axes is in summary.json, not drawn."""
     import json
     from scipy.stats import gaussian_kde
     from fig3_common import GROUP_ORDER, load_positions
@@ -451,7 +451,7 @@ def panel_sc(plt, args, genes, curves, out):
     cell_dir = Path(args.results_root) / args.out / 'cells'
     fig = plt.figure(figsize=(SIZE['sc'][0] / 100, SIZE['sc'][1] / 100))
     summ = {}
-    for species, name, run, y0 in [('mouse', 'Mouse control', 'aki', 0.67), ('human', 'Human', 'hvm', 0.36)]:
+    for species, name, run, y0 in [('mouse', 'Mouse control', 'aki', 0.53), ('human', 'Human', 'hvm', 0.04)]:
         d = cell_dir / species
         cells = pd.read_parquet(d / 'cells.parquet')
         nodes = np.load(d / 'nodes.npy')
@@ -459,7 +459,7 @@ def panel_sc(plt, args, genes, curves, out):
         tub = load_positions(args.results_root, run)
         tub = tub[tub['sample'].isin(cells['sample'].unique())]
         groups = [g for g in GROUP_ORDER if (cells.tubule_group == g).sum() >= 50 and (tub.group == g).sum() >= 50]
-        ax = fig.add_axes([0.0, y0, 0.36, 0.27])
+        ax = fig.add_axes([0.0, y0 + 0.04, 0.36, 0.36])
         seg = cells.tubule_group.fillna('').to_numpy()
         order = np.random.default_rng(0).permutation(len(cells))
         order = np.concatenate([order[seg[order] == ''], order[seg[order] != '']])
@@ -470,7 +470,7 @@ def panel_sc(plt, args, genes, curves, out):
         ax.set_title(f"{name}: {len(cells):,} cells", fontsize=7, color=INK, pad=1)
         grid = np.linspace(0, 1, 300)
         for j, (title, t, g) in enumerate([('cells', cells.t, cells.tubule_group), ('tubules', tub.t, tub.group)]):
-            ax = fig.add_axes([0.42 + j * 0.30, y0 + 0.03, 0.26, 0.23])
+            ax = fig.add_axes([0.42 + j * 0.30, y0 + 0.03, 0.26, 0.38])
             for i, grp in enumerate(groups):
                 base = len(groups) - 1 - i
                 yv = gaussian_kde(t[g == grp].to_numpy(float), bw_method=0.15)(grid)
@@ -485,21 +485,6 @@ def panel_sc(plt, args, genes, curves, out):
             ax.set_xticks([0, 1])
             ax.set_xlabel('pseudostructure', labelpad=0)
             ax.set_title(title, fontsize=7, color=INK, pad=1)
-    # per-section rho of position against nephron order: tubules, and cells by their tubule's label
-    ax = fig.add_axes([0.14, 0.05, 0.82, 0.22])
-    secs = [(sp, s) for sp in ('mouse', 'human') for s in sorted(summ[sp]['rho_tubules'])]
-    for k, (sp, s) in enumerate(secs):
-        tv, cv = summ[sp]['rho_tubules'][s], summ[sp]['rho_cells_tubule_label'][s]
-        ax.plot([k, k], [cv, tv], color='#BBBBBB', lw=0.8, zorder=1)
-        ax.scatter([k], [tv], s=22, color=INK, zorder=2, label='tubules' if k == 0 else None)
-        ax.scatter([k], [cv], s=22, facecolor='white', edgecolor=INK, lw=0.9, zorder=2, label='cells' if k == 0 else None)
-    ax.set_xticks(range(len(secs)))
-    ax.set_xticklabels([SECTION_NAMES.get(s, s) for _, s in secs], fontsize=6)
-    ax.set_xlim(-0.5, len(secs) - 0.5)
-    ax.set_ylim(0, 1)
-    ax.set_yticks([0, 0.5, 1])
-    ax.set_ylabel('ρ with nephron order', labelpad=1)
-    ax.legend(loc='lower left', fontsize=6, frameon=False, handletextpad=0.2)
     fig.savefig(out / 'f4_sc.png', facecolor='white')
     plt.close(fig)
     return summ
