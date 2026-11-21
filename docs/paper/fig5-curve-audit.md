@@ -1,0 +1,63 @@
+# Full-profile comparison of the mouse and human proximal tubule
+
+## Biological result
+
+Early and late amino-acid transporter profiles are preserved across the sampled kidneys. Selected brush-border
+peptidases and carbohydrate-metabolism enzymes show reproducible changes in where their transcripts are high
+relative to other genes in the same functional group. The human samples are two cortical sections from one donor.
+The measurements describe RNA profiles along the reconstructed axis.
+
+| Program | What the individual profiles and counts show |
+|---|---|
+| Amino-acid transport | All 10 screened members of the archived Reactome plasma-membrane amino-acid transport set meet the conserved-shape rule. Seven stay early-weighted, including SLC6A19, SLC3A2, SLC7A7, SLC7A8 and SLC7A9. SLC3A1, SLC6A18 and SLC6A6 stay late-weighted. SLC6A19 and SLC7A9 track one another across fixed-width bins in all four sections (r = 0.91, 0.93, 0.86 and 0.88). The association persists in the lower-mitochondrial-fraction human profiles (r = 0.69 and 0.78). SLC16A10 has a shallow profile and less agreement in the low-mito check. |
+| Lysosomal genes | Seven of eight shape-supported genes in the archived KEGG lysosome set retain their profile, including early-weighted CTSB, CTSL and LGMN and late-weighted HEXB. CTSH is the divergent member. |
+| Brush-border peptide processing | MME and DPP4 are late-weighted in the two mice and early-weighted in both human sections. Mouse DPP4 is comparatively shallow. DPEP1 and ENPEP stay early-weighted. Across the fixed-width count bins, MME tracks DPP4 in all four sections, while the MME–DPEP1 correlation goes from −0.91 and −0.92 to +0.94 and +0.97. In the lower-mito human subsets it is +0.91 and +0.94. Of 16 screened genes in the archived KEGG protein digestion and absorption annotation, 10 qualify for the full-profile comparison. Eight transporter genes retain their shape, and MME and DPP4 diverge. ANPEP is weakly graded in the displayed interval. |
+| Carbohydrate metabolism | PCK1, DCXR and MIOX are earlier-weighted in mouse and later-weighted in human. The MIOX human gradient is shallower than the mouse gradient. FBP1 and ALDOB retain a decline toward the late PT, even though positions of their interior maxima vary. PCK1–FBP1 correlation across count bins goes from +0.94/+0.90 to −0.72/−0.64 and stays negative in the lower-mito human subsets (−0.69/−0.62). |
+| Peroxisome-associated genes | The shapes vary by component. CAT is middle-to-late in mouse and early in human, ACOX2 has a pronounced late rise in mouse and a shallow human profile, and HAO2 and AMACR are more late-weighted in human. IDH1 stays early-weighted. Four of eight shape-supported KEGG peroxisome genes meet the divergence rule. The signs and strengths vary with binning and mitochondrial filtering. |
+| Transporter exceptions | SLC16A9 goes from late toward early and SLC16A12 goes from early toward late. Both changes survive reaggregation and the lower-mito check. Of 29 eligible genes in the archived Reactome SLC-mediated transport set, 22 retain their shape and two meet the divergence rule. This annotation includes a subset of the SLC families. |
+
+The clearest comparison for Fig. 5 is amino-acid transport beside brush-border peptide processing. It pairs
+a well-preserved early/late organization with selected enzymes whose relative profiles change. The PCK1–FBP1
+comparison is a second example of a change within a named functional group.
+
+## Data and checks
+
+- Inspected the 3,912 one-to-one orthologs from the current Fig. 5 universe: shared detection, proximal-tubule
+  versus neighboring segment filter, and convergence in the four sections. The inputs were per-section COAST
+  log₂ rates and observed counts aggregated by position. No differential expression statistics or existing
+  change calls determined the new groups. Local gene-set membership was joined after shape comparison.
+- Compared shapes on the common 0.19–0.875 mouse-reference interval. Added 0.5 CP10k before taking logs.
+  Interpolated the 20 observed equal-count bin rates to the fitting grid and smoothed with a Gaussian
+  kernel of 0.025 COAST units for the shape comparison. Every qualified gene has a fitted range of at
+  least 0.5 log₂ units in each section and within-group fit and observed correlations of ≥0.65 and ≥0.55,
+  respectively. The 175 genes that qualify have positional variation supported in all four sections.
+- Conserved shapes require all four mouse–human correlations to reach 0.70 for fits and 0.50 for observed bins.
+  Divergent shapes require all four to stay at or below 0.30 and 0.45, respectively. The alternative COAST
+  coordinates, constructed without the profiled gene, must agree at 0.65/0.45 for conserved or at most
+  0.40/0.50 for divergent. These descriptive cutoffs yield 97 conserved, 48 divergent and 30 intermediate or
+  sensitive profiles. At fitted range cutoffs of 0.35 and 0.75, the respective conserved/divergent counts are
+  133/94 and 56/19. The balance of conserved and divergent curves is a feature of the well-supported subset.
+- In the 97 conserved profiles, 48 peak in the early interval (≤0.35) in all four sections and 37 peak in the
+  late interval (≥0.67) in all four. Among the 48 divergent profiles, 20 have all four maxima in opposite
+  bands in the late-mouse-to-early-human direction, and 10 in the reverse direction. Other examples change
+  between a middle and terminal peak or differ in profile shape despite peaking in the same broad region.
+  These peak labels describe the full-curve groups after classification. The heatmap shows the shapes
+  standardized within each section, then averaged with equal weights. Shape clusters order its rows.
+- At the 0.5 log₂ range cutoff, 479 genes meet the range criterion in both mice but fail to meet it in both
+  human sections, and 95 show the reverse. Different probe panels, one human donor and technical variation
+  limit biological interpretation of the widespread reduction in human amplitude. The broader 474-gene
+  Fig. 5 call set captures shape differences even when one group has limited amplitude. All 48 of the divergent
+  shapes in this stricter audit are in that call set. Twenty genes called by the broader screen meet this
+  audit's conserved-shape rule, since the two rules test different properties of the same curves.
+- Re-aggregated the original counts into 20 fixed-width bins spanning the four sections' common central
+  support. Rates use the sum of non-mitochondrial library sizes as the denominator. Repeated within each
+  human section's bottom mitochondrial tertile. For the numeric comparisons, kept positions in the comparison
+  interval with ≥20 tubules in both bottom-tertile subsets, yielding 13 shared bins between 0.28 and 0.872.
+  The pair correlations above describe overlap across position bins in the sampled specimens.
+
+## Reproduce
+
+Run `python analysis/paper/fig5_curve_audit.py` in the analysis environment.
+Outputs under `results/paper_figures/fig5/curve_audit/` include the two-panel shape heatmap, a 175-gene
+atlas with section-level curves and re-aggregated counts, a 25-gene program figure, membership and per-gene
+tables, and the observed pairwise correlations.

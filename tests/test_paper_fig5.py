@@ -127,3 +127,21 @@ def test_global_heatmap_keeps_gene_order_and_between_section_amplitude(tmp_path)
     assert genes.index.tolist() == ['b', 'a']
     np.testing.assert_allclose(curves[0], shapes[f'z|{SECTIONS[0]}'][::-1])
     np.testing.assert_allclose(curves[2], 0.25 * curves[0], atol=1e-12)
+
+
+def test_full_curve_audit_separates_reversal_from_flat_signal():
+    import pandas as pd
+
+    from fig5_curve_audit import classify
+
+    x = np.linspace(-1., 1., 15)
+    fitted = np.array([
+        [x, x, x],
+        [x, x, x],
+        [x, -x, .1 * x],
+        [x, -x, .1 * x],
+    ])
+    result = classify(fitted, fitted, fitted, fitted, pd.Index(['same', 'reversed', 'weak']))
+    assert result['conserved'].tolist() == [True, False, False]
+    assert result['divergent'].tolist() == [False, True, False]
+    assert result['reliable_both'].tolist() == [True, True, False]
