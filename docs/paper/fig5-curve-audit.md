@@ -1,5 +1,45 @@
 # Full-profile comparison of the mouse and human proximal tubule
 
+## Global comparison
+
+Of 3,912 orthologs examined, 175 had reproducible positional variation in both mouse kidneys and both human
+cortical sections. Within these 175, 97 retained the same profile shape (55%), 48 diverged (27%), and 30 were
+intermediate or sensitive to the comparison (17%). Among the remaining 3,737, 479 reached the amplitude cutoff
+in both mice only, 95 in both human sections only, 3,161 in neither pair and two in both pairs with insufficient
+within-group reproducibility. The broader Fig. 5 screen flagged 474 of 873 eligible genes by allowing positional
+variation supported in either group. It includes all 48 of the stricter divergent profiles. In fixed-width
+raw-count bins, 48 of 48 divergent and 94 of 97 conserved profiles also met their observed shape-correlation
+cutoffs. The total and split depend on how much positional variation is required in all four sections.
+
+| Peak-position pattern among the 48 divergent profiles | Genes |
+|---|---:|
+| Late in mouse, early in human | 20 |
+| Early in mouse, late in human | 10 |
+| Between the middle and a terminal band | 12 |
+| Same broad peak band with a different profile shape | 2 |
+| Peak band varied between sections of one group | 4 |
+
+The peak bands describe fitted profiles after the full-curve comparison. The late-to-early count exceeded the
+early-to-late count at all three amplitude cutoffs (32 vs 22, 20 vs 10, and 6 vs 2). Among the 97 conserved
+profiles, 48 peaked early in all four sections and 37 peaked late in all four. This points to stable early and late
+expression patterns alongside changes in both directions.
+
+| Functional annotation | Shape-supported | Conserved | Divergent |
+|---|---:|---:|---:|
+| All orthologs | 175 | 97 | 48 |
+| Reactome SLC-mediated transport | 29 | 22 | 2 |
+| Reactome amino-acid transport | 10 | 10 | 0 |
+| KEGG lysosome | 8 | 7 | 1 |
+| Reactome amino-acid, carbohydrate or fatty-acid metabolism | 38 | 20 | 11 |
+| KEGG peroxisome | 8 | 3 | 4 |
+
+These memberships overlap, and the three metabolic sets are counted once per gene in their union. The clearest
+functional theme is the conservation of several transport and lysosomal profiles. The divergence fraction in the
+metabolic union is similar to the full supported set, and its divergent members span both directions of change.
+Peroxisome annotations offer a smaller mixed example with a higher fraction of differences. The fractions are
+descriptive, with two mouse kidneys and two sections from one human donor. A shared direction of expression
+change establishes a recurring positional pattern, while a common regulatory mechanism remains unresolved.
+
 ## Biological result
 
 Early and late amino-acid transporter profiles are preserved across the sampled kidneys. Selected brush-border
