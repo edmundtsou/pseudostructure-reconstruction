@@ -2,10 +2,11 @@
 
 ## Fig. 5 overview
 
-**Proximal tubule expression changes follow four positional patterns.** The heatmaps show all 474 orthologs
-called by the shape-difference screen, with the same gene order in the two mouse kidneys and the two cortical
-sections from one human kidney. The urate and organic-anion pairs show how changes in individual profiles alter
-the relative positions of transport components. All measurements are from the study's Visium HD sections.
+**Proximal tubule expression changes follow four positional patterns.** The two heatmaps show all 474
+orthologs called by the shape-difference screen in the same gene order. They average the two mouse kidneys
+and the two cortical sections from one human kidney, respectively. The urate and organic-anion pairs show
+how changes in individual profiles alter the relative positions of transport components. All measurements are
+from the study's Visium HD sections.
 
 ### Manuscript Results
 
@@ -18,10 +19,11 @@ The raw-count test uses their original tubule profiles with matching for library
 **Fig. 5 | Proximal tubule expression patterns in mouse and human.** **a,** Fitted profiles of all 474
 shape-difference calls, from 873 eligible one-to-one orthologs. A gene was eligible if its fitted profile varied
 by at least 0.5 log₂ units (about 1.4-fold) in both sections of at least one group. Of the called genes, 122 meet
-that amplitude criterion in both groups, 280 only in mouse and 72 only in human. Profiles show log₂ counts
-per 10,000 plus 0.5 in counts space, centered within each section. For each gene, all four curves are divided
-by the largest of its four within-section SDs. The shared scale preserves differences in the amplitude of
-a gene's profiles. Rows are ordered by shape cluster and then by the magnitude of the screened difference.
+that amplitude criterion in both groups, 280 only in mouse and 72 only in human. Profiles show
+log₂(CP10k + 0.5), centered within each section. For each gene, all four curves are divided by the largest of
+its four within-section SDs. The two heatmaps average the scaled curves from the two mouse kidneys and the
+two human cortex sections, respectively, with equal section weights. Rows are ordered by shape cluster and
+then by the magnitude of the screened difference.
 Each column uses the common fitting interval at 0.09–0.945 on the COAST mouse-reference quantile scale.
 **b,** Section-level mean profiles for the four groups from a. Group names describe the mean peak positions
 from mouse to human. **c,d,** Per-section curves and observed position bins for the NPT4–URAT1 and OAT3–MRP2

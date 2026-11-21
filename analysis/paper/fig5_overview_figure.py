@@ -17,7 +17,6 @@ from fig5_global_shapes import SECTIONS, load_global_shapes
 from fig5_urate import REPO
 
 SPECIES = ('Mouse', 'Human')
-SECTION_NAMES = ('Kidney 1', 'Kidney 2', 'Cortex 1', 'Cortex 2')
 SPECIES_COLORS = ('#31597C', '#687D3D')
 GENE_COLORS = ('#17688F', '#AE491F')
 STYLES = ('-', '--', '-', '--')
@@ -40,13 +39,15 @@ def panel_label(ax, letter, title, *, pad=7):
 
 
 def heatmaps(fig, axs, x, genes, curves):
-    """Show the same ordered genes in all four sections on the shared fitting interval."""
+    """Display equally weighted section means, retaining the shared gene scale."""
     cmap = LinearSegmentedColormap.from_list('centered_expression', ['#234A7B', '#FAF8F3', '#AD401F'])
     counts = genes.groupby('cluster').size()
     boundaries = np.r_[0, counts.cumsum().to_numpy()]
     half_step = (x[1] - x[0]) / 2
-    for i, ax in enumerate(axs):
-        heat = ax.imshow(curves[i], origin='upper', aspect='auto', interpolation='nearest',
+    sources = ('Two kidneys', 'Two cortical sections from one donor')
+    for i, (ax, species, color, source) in enumerate(zip(axs, SPECIES, SPECIES_COLORS, sources)):
+        mean = curves[2 * i:2 * i + 2].mean(axis=0)
+        heat = ax.imshow(mean, origin='upper', aspect='auto', interpolation='nearest',
                          extent=(x[0] - half_step, x[-1] + half_step, len(genes), 0),
                          cmap=cmap, vmin=-2, vmax=2, rasterized=True)
         for bound in boundaries[1:-1]:
@@ -56,11 +57,9 @@ def heatmaps(fig, axs, x, genes, curves):
         ax.tick_params(axis='x', length=2, pad=2)
         ax.spines[['left', 'bottom']].set_visible(False)
         dim = ax.get_position()
-        fig.text(dim.x0 + dim.width / 2, dim.y1 + 0.007, SECTION_NAMES[i], ha='center', fontsize=7)
-    for species, left, right, color in zip(SPECIES, axs[::2], axs[1::2], SPECIES_COLORS):
-        l, r = left.get_position(), right.get_position()
-        label = species if species == 'Mouse' else 'Human · one donor'
-        fig.text((l.x0 + r.x1) / 2, l.y1 + 0.024, label, ha='center', color=color, weight='bold', fontsize=8)
+        center = (dim.x0 + dim.x1) / 2
+        fig.text(center, dim.y1 + 0.024, species, ha='center', color=color, weight='bold', fontsize=8)
+        fig.text(center, dim.y1 + 0.007, source, ha='center', fontsize=7)
     left = axs[0]
     for i, (cluster, count) in enumerate(counts.items()):
         mid = (boundaries[i] + boundaries[i + 1]) / 2
@@ -165,7 +164,7 @@ def render(fig5_root):
     fig = plt.figure(figsize=(WIDTH_MM / 25.4, 203 / 25.4))
     grid = fig.add_gridspec(4, 4, height_ratios=[3.25, 1, 1.34, .84],
                             left=.173, right=.929, top=.865, bottom=.109, wspace=.30, hspace=.66)
-    top = [fig.add_subplot(grid[0, i]) for i in range(4)]
+    top = [fig.add_subplot(grid[0, :2]), fig.add_subplot(grid[0, 2:])]
     classes = [fig.add_subplot(grid[1, i]) for i in range(4)]
     examples = [fig.add_subplot(grid[2, i]) for i in range(4)]
     bottom = fig.add_subplot(grid[3, :])
@@ -180,7 +179,7 @@ def render(fig5_root):
     class_profiles(classes, x, genes, curves)
     paired_profiles(fig, examples, x, fig5_root / 'screen')
     observed_overlap(bottom, pairs)
-    fig.text(.173, .057, 'Heatmap rows share a gene-specific scale across all four sections.\n'
+    fig.text(.173, .057, 'Each heatmap averages two section profiles on a shared gene-specific scale.\n'
              'COAST position increases from early to late. Dots in c and d show observed expression bins.\n'
              'Circles and solid lines mark section 1. Diamonds and dashed lines mark section 2.',
              fontsize=6.8, va='top', color='.28')

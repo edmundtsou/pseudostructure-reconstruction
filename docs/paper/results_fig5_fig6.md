@@ -13,8 +13,8 @@ two control mouse kidneys and two cortical sections from one human kidney on a s
 We assessed profile shape in 873 one-to-one orthologs with at least 1.4-fold variation along the PT in
 both sections of at least one group. Of these, 474 passed the shape-difference screen, which compared
 the observed group contrast with balanced section swaps (Fig. 5a). Among the 474, 122 reached the
-amplitude threshold in both groups, 280 in mouse only and 72 in human only. The heatmaps show the same
-genes in all four sections, on a scale that preserves differences in the amplitude of their profiles.
+amplitude threshold in both groups, 280 in mouse only and 72 in human only. The two heatmaps show the
+same genes, averaging the two section profiles within each group on a shared gene-specific scale.
 
 Clustering the difference profiles yielded four groups. In two groups, early or late enrichment exchanged
 positions between the species. The early-to-late group contained 114 genes, including the L-xylulose
