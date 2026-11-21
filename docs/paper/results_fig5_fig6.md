@@ -1,90 +1,49 @@
-# Results: Figs. 5 and 6 (draft, 2026-11-12, v4: COAST fits)
+# Results: Figs. 5 and 6
 
-Results report what the data show; clinical background and interpretation are in `discussion_fig5_fig6.md`
-(user, 2026-11-12). Discovery comes from one screen applied to both comparisons: each section's curve is reduced to its
-shape (zero mean, unit variance), shapes are differenced between conditions, genes are called against balanced
-section swaps, and the called difference curves are clustered (`analysis/paper/shape_clusters.py`). Pathways are
-tested on the same difference curves. Every number below comes from the COAST fits of the v4fix segmentations
-(`analysis/paper/coast_fit.py`, 2026-11-12); v3, on the package fits of the earlier segmentations, is
-`results_fig5_fig6_v3_package.md`, and the version with drug background in each section is
-`results_fig5_fig6_v2_drug_stories.md`. Style: Fan-lab Results (`citation_checks/H_results_figure_style.md`).
+Fig. 5 refers to the urate-centered draft produced by `analysis/paper/fig5_urate_figure.py`. Its panel order
+is a, ortholog endpoint contrasts, b–c, mouse and human transcript profiles, d, native tissue maps,
+e, tubule-level overlap, f, urate transport components, and g, endpoint sensitivity. The companion
+gene-pair comparison (`analysis/paper/fig5_story_comparison.py`) is cited as Extended Data Fig. X pending
+final numbering. The evidence and Fig. 5 legend are in [the Fig. 5 outline](fig5-significance-outline.md).
 
----
+The Fig. 6 draft uses the 2026-11-12 v4fix COAST results. Its figure legend appears below the Results.
 
-### COAST enables comparison of positional gene expression along the mouse and human proximal tubule
+### Urate export and reuptake transcripts separate along the sampled human proximal tubule
 
-Human kidney atlases resolve the proximal tubule (PT) into two or three segments [Lake 2023], so whether a gene occupies
-the same stretch of the human PT as of the mouse PT is largely unknown. We applied COAST to two mouse kidney sections
-and two cortical sections from one human kidney assayed by Visium HD, placing PT tubules from both species on a shared
-pseudostructure coordinate (Fig. 5a). Human gradients were about half as steep as mouse gradients, a ratio also seen
-between independent human and mouse single-nucleus atlases (Methods). Because the two species are measured on different
-probe panels, we compared the shape of each gene's profile along the PT rather than its level or amplitude.
+We asked whether mouse and human organize uptake and export transporters similarly along the proximal tubule
+(PT). We compared within-section expression along a shared COAST coordinate in two control mouse kidneys and
+two healthy cortical sections from one human kidney. Of 3,908 assessable one-to-one
+orthologs, 60 showed opposite early-to-late expression contrasts in mouse and human, with consistent
+directions across sections and agreement between fitted profiles and raw counts (Fig. 5a).
 
-*Slc5a2*, which encodes SGLT2, illustrates the comparison. In mouse its expression was restricted to PT tubules early
-along the pseudostructure coordinate, whereas in human it extended across most PT tubules (Fig. 5b). Along
-pseudostructure, *Slc5a2* remained above half of its maximum through 0.26–0.29 of the mouse PT but through 0.58–0.62 of
-the human PT (Fig. 5c).
+One reversal involved NPT4 (*SLC17A3*), an apical transporter that exports urate into the tubular lumen.
+We examined its position relative to URAT1 (*SLC22A12*), which returns luminal urate to the epithelium.
+In both mice, the two transcripts rose together early in the PT and peaked near the middle of the
+coordinate. In both human sections, NPT4 peaked early and URAT1 peaked late (Fig. 5b,c). Across the
+observed position bins, the two transcripts were positively correlated in mouse (Pearson r = 0.98
+in each kidney) and negatively correlated in the human sections (r = −0.66 and −0.64).
+[Jutabha et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC2966126/)
+[Enomoto et al.](https://www.nature.com/articles/nature742)
 
-### Clustering of shape differences identifies four classes of positional change between species
+We mapped the high-expressing PT profiles back to the tissue sections and asked how often the two
+transcripts were high in the same profile. At the top-quartile threshold within library-depth strata,
+both transcripts were high in 9.0% and 9.4% of mouse PT profiles and 5.4% and 5.7% of human PT
+profiles (Fig. 5d,e). After additionally matching on mitochondrial fraction, joint-high expression
+was 1.44 and 1.48 times the expectation under independence in the two mice and 1.03 and 1.07 times in
+the two human sections (Extended Data Fig. Xb). The mouse–human ordering held at all three
+high-expression thresholds. The late-minus-early contrast was larger for URAT1 than for NPT4 in both
+human sections and similar for the two genes in mouse. This difference persisted with segment labels
+alone, gene-held-out coordinates and restricted tissue subsets (Fig. 5g).
 
-To find such differences without specifying their form in advance, we reduced each section's curve to its shape by
-centring it and scaling it to unit variance, and computed for each gene the difference between the mean human shape
-and the mean mouse shape (Methods). Of 3,868 PT-expressed genes, 1,593 changed at least 1.4-fold along the PT in both
-sections of at least one species and so had a defined shape. We called a gene when its difference curve was large
-(root mean square ≥ 0.5 in units of standard deviation) and at least twice as large as under either balanced swap of
-one mouse and one human section between the groups. This called 666 genes, against four under each swap.
-
-Hierarchical clustering of the 666 difference curves gave four classes (Fig. 5f). In the first (110 genes), the mean
-mouse shape peaked at the end of the PT (0.90) and the human shape in the middle (0.52); it included *Slc5a2* and
-*Slc7a7* (y+LAT1), whose peaks stayed early in both species (mouse 0.05–0.14, human 0.23–0.24) while the human decline
-was more gradual (Fig. 5d). In the second (200 genes), expression peaked at the start of the mouse PT (0.09) and at the
-end of the human PT (0.88); it included *Slc25a15* (ORNT1), which peaked at 0.16–0.30 in mouse and 0.90–0.94 in human.
-The third and largest class (256 genes) was the converse, late in mouse (0.86) and early in human (0.05); it included
-*Slc10a2* (ASBT), which peaked at 0.78–0.80 in mouse and at 0.05–0.32 in human. The fourth (100 genes) was mid-PT in
-mouse (0.53) and late in human (0.88); it included *Slc22a12* (URAT1), which peaked at 0.53–0.54 in mouse and 0.88–0.94
-in human.
-
-The second and third classes held the genes whose gradient reversed direction between species (Fig. 5e). *Mme*
-(neprilysin) rose 2.9–3.6 log2 from S1 to S3 in mouse, peaking at 0.83–0.84, but fell 1.0–1.4 log2 in human, peaking
-at 0.18–0.24; *Slc17a3* (NPT4) rose 1.1–1.4 log2 in mouse and fell 1.3–1.7 log2 in human; and *Dcxr* peaked at the
-start of the mouse PT (0.05–0.06) and at the end of the human PT (0.90–0.92). For each of these three genes, both
-directions agree with independent microdissected mouse segments [Chen 2021] and human single-nucleus PT profiles
-[Lake 2023]. The mouse direction of *Mme* also agrees with rat, in which neprilysin protein is most concentrated in S3
-[Vio 2018].
-
-### Pathway-level shape differences between species are as large as gene-level ones
-
-We next asked whether genes of a pathway change shape together. For each of 364 Reactome, KEGG and Hallmark sets with
-at least ten genes with a defined shape, we averaged the members' difference curves, so that the average is large only
-when members change in the same direction at the same positions (Methods). Ninety-seven sets changed by the gene-level
-criterion, and none under either section swap. Two of these also changed more than random sets of the same size drawn
-from the 1,593 genes: protein secretion (13 genes) and protein processing in the endoplasmic reticulum (34; q = 0.04 for
-both). Four representative sets, one from each cluster of the 97 set-level difference curves, are shown in Fig. 5g.
-Oxidative phosphorylation genes (22) peaked at the start of both the mouse and human PT (0.05 and 0.21) but fell more
-steeply along the human PT. Ubiquitin-specific processing proteases (16) and protein secretion (13) peaked at the end of
-the mouse PT (0.86 and 0.90) and at the start of the human PT (0.05 for both), whereas glyoxylate metabolism and glycine
-degradation (16) peaked mid-PT in mouse (0.51) and later in human (0.78).
-
-Taken together, these results demonstrate that COAST, combined with clustering of shape differences, identifies where
-along the PT gene expression differs between species without a predefined pattern. Applied to mouse and human, it
-finds 666 genes in four classes, including early-to-late and late-to-early reversals, and pathways whose members move
-together; two secretory-pathway sets move more than the genome-wide background. All human data derive from two cortical
-sections of one donor.
-
-**Fig. 5 | COAST enables comparison of positional gene expression along the mouse and human proximal tubule.** **a** One
-mouse and one human kidney section assayed by Visium HD. PT tubules are coloured by their position on the shared
-pseudostructure coordinate; other tubules are grey. **b** *Slc5a2* (SGLT2) expression in the same PT tubules. **c**
-*Slc5a2* expression, in log2(counts per 10,000 + 0.5), against pseudostructure for each mouse (blue) and human
-(magenta) section over pseudostructure 0.05–0.95. Points are binned means of tubules; lines are fitted curves. Levels
-are not comparable between species because the two probe panels differ. Dashed lines mark the S1/S2 and S2/S3
-boundaries of the mouse segment labels. **d** As in c for one gene from each shape class in f: *Slc7a7* (y+LAT1),
-*Slc25a15* (ORNT1), *Slc10a2* (ASBT) and *Slc22a12* (URAT1). **e** Genes whose gradient reverses between species, as in
-c: *Mme* (neprilysin), *Slc17a3* (NPT4) and *Dcxr*. **f** The four classes of shape difference. Each section's curve is
-centred and scaled to unit variance; lines show the mean over the class's genes for each section (thin) and each species
-(thick). Background shading marks S1, S2 and S3. Gene counts above each panel; two member genes are named. **g** As in
-f for one pathway from each group of pathway-level shape differences.
-
----
+NPT1, a second apical urate exporter, followed the same endpoint directions as NPT4 (Fig. 5f).
+We then asked whether another uptake and export pair also separated. The basolateral uptake transporter
+OAT3 and apical exporter MRP2 showed the reverse relationship. Their position-bin profiles were
+negatively correlated in mouse (r = −0.87 and −0.94) and positively correlated in the human sections
+(r = +0.38 and +0.74, Extended Data Fig. Xa). OAT1 showed a similar change in its relationship with MRP2
+(Source Data). In the sampled kidneys, the degree of axial overlap therefore depends on which
+transport steps are compared. The two human sections represent one donor, and these results describe
+transcript localization. [NPT1 transport](https://pubmed.ncbi.nlm.nih.gov/20566650/)
+[Organic-anion transporter roles](https://www.sciencedirect.com/science/article/pii/S0006295217302794)
 
 ### COAST resolves where acute injury reshapes the proximal tubule
 
@@ -97,7 +56,7 @@ Methods). Because both conditions are measured on one probe panel, levels can be
 
 ### Clustering of shape differences identifies four classes of positional change after injury
 
-We applied the same shape-difference screen as for the species comparison. Of 5,496 PT-expressed genes, 1,788 changed
+We applied a screen for shape differences between the control and injured kidneys. Of 5,496 PT-expressed genes, 1,788 changed
 at least 1.4-fold along the PT in both sections of at least one condition. The screen called 668 genes, and none under
 either balanced swap of one control and one injured section.
 
@@ -153,6 +112,3 @@ condition (thick). Background shading marks S1, S2 and S3. Gene counts above eac
 > Methods sentences still to write: shape screen (eligibility 1.4-fold in both sections of one condition; RMS ≥ 0.5;
 > both swaps ≤ 0.5 × contrast; Ward k = 4), pathway step (≥ 10 shaped members; same rule on the mean difference
 > curve; competitive p from 10,000 size-matched random sets, BH), and the 4-cluster choice (fixed, not tuned).
->
-> Not recomputed on the COAST fits: the human/mouse gradient ratio of the first paragraph ("about half as steep") and
-> its atlas comparison (`results/human_gradient_attenuation/`, from `analysis/scripts/attenuation_external_check.py`).

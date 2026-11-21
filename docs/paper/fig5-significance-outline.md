@@ -6,41 +6,12 @@
 separate in the sampled human kidney.** The figure and Results below use only the four study Visium HD
 sections. The published papers inform panel design and the annotation of transport roles.
 
-### Suggested Results text
+### Manuscript Results
 
-#### The relative positions of urate export and reuptake transcripts differ between mouse and human proximal tubules
-
-We used the shared COAST coordinate to compare proximal tubule expression in two control mouse kidneys and two
-healthy cortical sections from one human kidney. Of 3,908 assessable one-to-one orthologs, 60 showed opposite
-early-to-late expression contrasts between mouse and human, with concordant directions in the two sections
-per species and agreement between fitted profiles and raw counts (Fig. 5a). We examined this pattern in urate
-handling by comparing NPT4 (SLC17A3), which exports urate into the lumen, with URAT1 (SLC22A12), which mediates
-apical urate reuptake. [NPT4 function](https://pmc.ncbi.nlm.nih.gov/articles/PMC2966126/)
-[URAT1 function](https://www.nature.com/articles/nature742)
-
-NPT4 and URAT1 transcript profiles rose together in both mice and peaked near the middle of the shared
-coordinate. In both human sections, NPT4 peaked early and URAT1 peaked late (Fig. 5b,c). The observed
-expression profiles across 20 position bins were positively correlated in mouse (Pearson r = 0.98 in each
-kidney) and negatively correlated in the human sections (r = −0.66 and −0.64).
-
-We next mapped tubule profiles with high expression of each transcript back to their measured tissue
-locations (Fig. 5d). Using the top quarter of expression for each gene within sequencing-depth strata,
-the two transcripts were jointly high in 9.0% and 9.4% of all mouse profiles and 5.4% and 5.7% of all
-human profiles. These frequencies were 1.43 and 1.48 times the depth-matched independence expectations
-in the two mice, and 0.86 and 0.91 times the expectations in the human sections. The same ordering held
-when high expression was defined at the top fifth or third (Fig. 5e). Further matching on mitochondrial
-fraction yielded top-quartile ratios of 1.44 and 1.48 in the mice and 1.03 and 1.07 in the human sections.
-The human sections therefore showed less joint enrichment than the mice under both matching definitions.
-These comparisons used observed counts and tubule profiles without referring to a position on the COAST axis.
-
-NPT1 (SLC17A1), a second apical urate exporter, followed the same endpoint directions as NPT4. URAT1
-remained late-weighted in all four sections, and the measured basolateral organic anion transporters
-retained their own endpoint directions across the species (Fig. 5f). The difference between the URAT1
-and NPT4 endpoint contrasts ranged from −0.22 to +0.02 log₂ units across the mouse checks and from
-+2.16 to +3.15 in the human sections, including with segment labels alone and with each gene held out of
-the coordinate used to measure it (Fig. 5g). These patterns place the two opposing apical transport
-transcripts in different parts of the proximal tubule in the sampled human kidney. The human evidence
-comes from one donor, and the measurements concern RNA. [NPT1 function](https://pubmed.ncbi.nlm.nih.gov/20566650/)
+The [mouse–human Results](results_fig5_fig6.md) open with a question about the relative positions of transport
+components. The ortholog screen supplies context for the urate example, the native tissue counts test
+joint enrichment, and the OAT3–MRP2 comparison shows that another uptake and efflux pair changes in the
+opposite direction. The Fig. 5 legend below and the companion comparison supply the assay details.
 
 ### Figure legend
 
@@ -101,24 +72,17 @@ OAT3–MRP2 comparison in the opposite direction. If a distinct physiological pr
 use the MME–DPP4 result. The shared plots and full four-section readouts are saved in the story comparison
 output. The human comparisons remain scoped to one donor.
 
-**Optional Results paragraph.** Organic-anion uptake and efflux showed the reciprocal relationship. The
-position-bin correlation between the basolateral uptake transporter OAT3 and the apical exporter MRP2 was
-negative in both mice (−0.87 and −0.94) and positive in both human sections (+0.38 and +0.74). OAT1 showed
-the same change in its relationship with MRP2. This comparison suggests that the axial relationship
-between transport components can change in either direction in this cohort. [Transport roles](https://www.sciencedirect.com/science/article/pii/S0006295217302794)
+### How the precedents structure biological discovery
 
-### Figure precedents
+| Paper | How the biological section develops | Application to Fig. 5 |
+|---|---|---|
+| **Yakubovsky et al., Fig. 3** | Starts with a quantified overview of shared and discordant zonation. Names examples from the comparison, then groups them into a specific biological process such as the urea cycle. Additional species test the scope of the observation. | Use the ortholog screen to locate the question. Move quickly to the urate comparison, with the conclusion scoped to the two mouse kidneys and the sampled human kidney. [Results and Fig. 3](https://www.nature.com/articles/s41586-026-10377-y) |
+| **Harnik et al., Figs. 3–4** | Evaluates whether anatomical sampling accounts for the cross-species pattern, then compares concordant and discordant genes and examines the tissue context. | Report how the key contrast behaves with segment labels, held-out coordinates and restricted subsets. Use the original tissue coordinates to show where joint expression was measured. [Fig. 3](https://www.nature.com/articles/s41586-024-07793-3/figures/3) [Fig. 4](https://www.nature.com/articles/s41586-024-07793-3/figures/4) |
+| **Moor et al., Figs. 5–6** | Moves from nutrient classes to individual profiles and spatial measurements, then asks whether the profiles of related genes agree. The purine example uses biochemical roles to explain the choice of genes. | Describe NPT4 and URAT1 together and quantify how often both transcripts are high in the same tubule profile. The measured tissue centroids and the fitted profiles come from the same Visium assay. [Figures and Results](https://shalevlab.weizmann.ac.il/wp-content/uploads/2018/09/Moor_2018.pdf) |
+| **Halpern et al., Fig. 4** | Uses the sequence of reactions in bile-acid synthesis to motivate a test of where each enzyme is expressed relative to the next. | Organize the urate example by opposing apical transport roles and the organic-anion example by basolateral uptake followed by apical export. The evidence concerns the relative positions of transcripts. [Results and Fig. 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC5321580/#F4) |
 
-- The global contrast and named close-ups follow the cross-species logic of Harnik Fig. 3 and Yakubovsky
-  Fig. 3. Harnik Fig. 4 pairs mapped tissue features with their quantitative profile.
-  [Harnik Fig. 3](https://www.nature.com/articles/s41586-024-07793-3/figures/3)
-  [Harnik Fig. 4](https://www.nature.com/articles/s41586-024-07793-3/figures/4)
-  [Yakubovsky Fig. 3](https://pmc.ncbi.nlm.nih.gov/articles/PMC13216088/#Fig3)
-- Moor Figs. 5–6 and Halpern Fig. 4 join the behavior of related components with expression measured in
-  tissue coordinates. Our corresponding panels show the transport components, the tissue maps and the
-  depth-matched overlap check from our Visium measurements.
-  [Moor Figs. 5–6](https://shalevlab.weizmann.ac.il/wp-content/uploads/2018/09/Moor_2018.pdf)
-  [Halpern Fig. 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC5321580/#F4)
+The manuscript uses these papers as structural precedents. Every comparative expression result in the
+Fig. 5 section comes from the study's Visium HD sections.
 
 ### Reproduce the comparison
 
