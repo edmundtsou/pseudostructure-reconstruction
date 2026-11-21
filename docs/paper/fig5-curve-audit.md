@@ -1,5 +1,35 @@
 # Full-profile comparison of the mouse and human proximal tubule
 
+## Three-row Fig. 5 draft
+
+**a–c. Ortholog profiles and positional filtering.** The first heatmap pair shows all 3,912 screened
+orthologs in order of their mouse positional bias. Each row is one gene, shown at the same row position
+in both heatmaps. The panels display equal-weight section means of centered log₂(CP10k + 0.5) on the
+shared 0.19–0.875 COAST interval. The filter retains a gene when its fitted range reaches 1 log₂ unit
+in both sections of at least one group. Of the 278 retained genes, 195 meet this rule only in mouse,
+30 only in human and 53 in both. Four k-means clusters group the full human-minus-mouse difference
+curves of these 278 genes after scaling each gene by the largest within-section SD across its four fits.
+The heatmap cluster sizes are 130, 72, 42 and 34. Their labels describe the contrast curves. For example,
+an early-positive and late-negative contrast can arise when a late mouse gradient is shallower in human.
+
+**d–e. Functional programs and shape agreement.** The left grid counts membership of each selected
+local annotation in the four clusters. The right grid restricts the same annotated sets to directly
+comparable genes with reproducible twofold variation in both groups, using the shape criteria below.
+Of the 53 comparable genes, 37 have conserved shapes, nine are intermediate and seven diverge. Cell tints
+represent the fraction of that row in the corresponding cluster or shape category. The annotations can
+overlap. For programs with only one or a few comparable members, the panel shows their coverage and
+individual outcomes. All 14 comparable members of the selected solute-carrier transport set are conserved.
+
+**f–i. Representative profiles.** Four genes meeting the positional filter illustrate conservation,
+an earlier profile in human and a later profile in human. Lines represent section fits and points show
+fixed-width position-bin counts normalized by non-mitochondrial library size. Species comparisons use
+within-section centered rates. The MME–DPEP1 correlations use observed position-bin rates within each
+section. Throughout, the human comparison uses two cortical sections from one donor.
+
+Run `python analysis/paper/fig5_curve_audit.py` to prepare the fixed-width counts and then
+`python analysis/paper/fig5_three_row_figure.py` to export this draft. The exports and the row order and
+program counts are in `results/paper_figures/fig5/three_row/`.
+
 ## Global comparison
 
 Of 3,912 orthologs examined, 175 had reproducible positional variation in both mouse kidneys and both human
