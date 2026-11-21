@@ -28,8 +28,10 @@ locations (Fig. 5d). Using the top quarter of expression for each gene within se
 the two transcripts were jointly high in 9.0% and 9.4% of all mouse profiles and 5.4% and 5.7% of all
 human profiles. These frequencies were 1.43 and 1.48 times the depth-matched independence expectations
 in the two mice, and 0.86 and 0.91 times the expectations in the human sections. The same ordering held
-when high expression was defined at the top fifth or third (Fig. 5e). This comparison used the observed
-counts and tubule profiles without referring to a position on the COAST axis.
+when high expression was defined at the top fifth or third (Fig. 5e). Further matching on mitochondrial
+fraction yielded top-quartile ratios of 1.44 and 1.48 in the mice and 1.03 and 1.07 in the human sections.
+The human sections therefore showed less joint enrichment than the mice under both matching definitions.
+These comparisons used observed counts and tubule profiles without referring to a position on the COAST axis.
 
 NPT1 (SLC17A1), a second apical urate exporter, followed the same endpoint directions as NPT4. URAT1
 remained late-weighted in all four sections, and the measured basolateral organic anion transporters
@@ -63,7 +65,8 @@ or restricted cores (glomerulus-distance proxy in mouse and lowest mitochondrial
   counts are 244, 258, 171 and 192. The respective within-stratum independence expectations are 170.5,
   173.8, 198.8 and 210.5. In both human cortex sections, many profiles carry each transcript and both can
   be high in the same profile. The contrast is in the frequency of strong joint expression. The independence
-  comparison is descriptive, and the four sections are the units displayed.
+  comparison is descriptive, and the four sections are the units displayed. With mitochondrial-fraction
+  tertiles nested within depth strata, the human joint-high rates are close to the independence expectation.
 - Panel f displays all six assessable genes from the eight transporters previously analysed by apical or
   basolateral role. SLC22A11 and SLC2A9 are absent from this assessable shared screen. Among the three
   basolateral uptake genes shown, OAT1 and OAT3 are early-weighted and OAT2 late-weighted in both species.
@@ -73,6 +76,36 @@ or restricted cores (glomerulus-distance proxy in mouse and lowest mitochondrial
   mouse-reference quantile scale. The glomerulus-distance subset is a cortical proxy, and the tissue
   centroids do not trace a complete tubule. The similar mouse profiles and divergent human profiles
   motivate a spatial protein-localization question. They do not measure transport activity.
+
+### Comparison with alternative biological stories
+
+We used the study's four Visium HD sections to compare 10 candidate stories and 19 transcript pairs. For each
+available gene, the comparison records detection, raw endpoint contrasts using three definitions and the
+archived gene-held-out result. For each pair, it compares log-expression correlations across position bins
+with the overlap of high profiles in the tissue, using three thresholds. The additional tissue analysis
+matches mitochondrial fraction as well as library depth. This is an exploratory comparison of the named
+candidates, with no inference treating tubule profiles as independent animals or human donors.
+
+| Candidate | What the four sections show | Paper role |
+|---|---|---|
+| **Urate export and reuptake** | NPT4 and URAT1 track together in mouse (bin r = +0.98/+0.98) and run in opposite directions in human (−0.66/−0.64). Both transcripts are detected in ≥66% of profiles in every section. The difference withstands alternative endpoints and the same-tubule check with depth and mitochondrial matching. NPT1 supports the exporter pattern. | **Fig. 5 centerpiece.** The two genes act on the same substrate in opposing directions, with evidence from the coordinate and tubule profiles. |
+| **Organic-anion uptake and efflux** | OAT3–MRP2 bin correlations switch from −0.87/−0.94 in mouse to +0.38/+0.74 in the human sections. OAT1–MRP2 shows the same change (−0.78/−0.74 to +0.54/+0.62). The top-quarter OAT3–MRP2 joint-high ratio with depth and mitochondrial matching is 0.85/0.76 in mouse and 0.96/1.15 in human. MRP2's weak human endpoint changes include one sign exception after QC restriction. | **Strongest transport counterpart.** Uptake and efflux transcripts track more closely in human, complementing the urate pattern. This is a statement about the named transcripts and their spatial association. [Transport roles](https://www.sciencedirect.com/science/article/pii/S0006295217302794) |
+| **Apical peptide processing** | MME and DPP4 both have positive mouse and negative human raw endpoint contrasts across the four definitions, with a smaller DPP4 contrast in mouse. ANPEP stays broadly expressed. MME–ANPEP joint enrichment is lower in both human sections after depth and mitochondrial matching (0.92/0.95 vs 1.13/1.15 in mouse). | **Best distinct supporting example.** Selected apical peptidases change geography. The result supports a transcript-localization claim for named enzymes. [Brush-border enzyme roles](https://pubmed.ncbi.nlm.nih.gov/2895788/) |
+| **Glucuronate–xylulose conversion** | DCXR, SORD and XYLB encode three consecutive reactions. All three have early mouse and late human raw contrasts with the standard endpoints, segment labels alone and held-out axes. The SORD human contrast is small and changes sign in one low-mitochondrial-fraction section. DCXR clears the reversal rule on both axes, and the pair overlap does not show wholesale reorganization. | **Mechanistically coherent metabolic lead.** Keep DCXR as the supported reversal, with XYLB and SORD as graded supporting observations. [Biochemical sequence](https://pmc.ncbi.nlm.nih.gov/articles/PMC12337341/) |
+| **Kynurenine–NAD branch** | ACMSD is early in mouse and late in human, whereas HAAO is late-weighted across all four sections. Their bin correlations change from −0.53/−0.55 to +0.76/+0.75. ACMSD's raw direction persists on the held-out axis, where it misses the strict support filter. QPRT has a small human contrast. | **Metabolic hypothesis.** There is a change in the geography of the branch-point enzyme. The data give a weaker read of the downstream route. [ACMSD function](https://pmc.ncbi.nlm.nih.gov/articles/PMC6448761/) |
+| **Glucose reabsorption** | The SGLT2-to-SGLT1 profile crossing is later in the human sections (0.65–0.67 versus 0.37–0.40). Human SLC5A1 is detected in roughly 6% of profiles. The well-covered entry and exit transcripts SGLT2 and GLUT2 retain strongly positive position-bin correlations in both species. | **Short illustrative example.** Conserved ordering with a later fitted crossing. |
+| **Phosphate, neutral amino acids, lactate and prostaglandins** | Phosphate transporter gradients keep their signs, and PiT-2 lacks shared-screen support. The late amino acid and lactate partners have sparse human counts. HPGD reverses robustly, while the uptake and downstream prostaglandin components have low mouse detection or inconsistent QC contrasts. | Individual examples or reserves. |
+
+Keep **urate** as the lead. If the Results can carry a second focused transport observation, add the
+OAT3–MRP2 comparison in the opposite direction. If a distinct physiological process fits the section better,
+use the MME–DPP4 result. The shared plots and full four-section readouts are saved in the story comparison
+output. The human comparisons remain scoped to one donor.
+
+**Optional Results paragraph.** Organic-anion uptake and efflux showed the reciprocal relationship. The
+position-bin correlation between the basolateral uptake transporter OAT3 and the apical exporter MRP2 was
+negative in both mice (−0.87 and −0.94) and positive in both human sections (+0.38 and +0.74). OAT1 showed
+the same change in its relationship with MRP2. This comparison suggests that the axial relationship
+between transport components can change in either direction in this cohort. [Transport roles](https://www.sciencedirect.com/science/article/pii/S0006295217302794)
 
 ### Figure precedents
 
@@ -95,10 +128,13 @@ The renderer uses the corresponding COAST QC, pass-1 labels and pseudospace file
 ```bash
 python analysis/paper/fig5_urate.py
 python analysis/paper/fig5_urate_figure.py
+python analysis/paper/fig5_story_comparison.py
 ```
 
 The figure and descriptive overlap and endpoint sensitivity tables are written to
 `results/paper_figures/fig5/urate/`.
+The alternative-story plot and its two source tables are written to
+`results/paper_figures/fig5/story_comparison/`.
 
 ## Earlier outline (2026-11-11)
 

@@ -80,3 +80,21 @@ def test_urate_high_expression_is_depth_stratified_and_requires_detection():
     assert flags.index.equals(units.index)
     assert flags.Slc17a3.tolist() == [False, True, False, False] * 10
     assert flags.Slc22a12.tolist() == [False, False, True, True] * 10
+
+
+def test_tissue_matching_splits_depth_strata_by_mitochondrial_fraction():
+    import pandas as pd
+
+    from fig5_urate_tissue import depth_strata, high_expression
+
+    units = pd.DataFrame({
+        'library': np.repeat(np.arange(1, 11) * 100, 6),
+        'mito': np.tile([0.2, 0.1, 0.3, 0.1, 0.2, 0.3], 10),
+        'a': np.tile([1, 2, 3, 4, 5, 6], 10),
+        'b': np.tile([6, 5, 4, 3, 2, 1], 10),
+    })
+    strata = depth_strata(units.library, units.mito)
+    assert strata.iloc[:6].tolist() == [1, 0, 2, 0, 1, 2]
+    high = high_expression(units, fraction=0.5, genes=('a', 'b'), strata=strata)
+    assert high.sum().tolist() == [30, 30]
+    assert not high.all(axis=1).any()

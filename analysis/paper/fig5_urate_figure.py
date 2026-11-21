@@ -11,9 +11,8 @@ import pandas as pd
 from matplotlib.lines import Line2D
 from matplotlib.transforms import ScaledTranslation
 
-from fig4_screen import MARGIN
 from fig5_urate import GENES, REPO, SECTIONS
-from fig5_urate_tissue import depth_strata, high_expression, tissue_units
+from fig5_urate_tissue import HIGH_FRACTIONS, overlap_table, raw_endpoint_contrasts, tissue_units
 
 GENE_COLORS = ('#17668C', '#AD481B')
 MAP_COLORS = (*GENE_COLORS, '#714E90')
@@ -21,7 +20,6 @@ SECTION_COLORS = ('#304555', '#304555', '#64763E', '#64763E')
 SECTION_NAMES = ('Mouse 1', 'Mouse 2', 'Human 1', 'Human 2')
 STYLES = ('-', '--', '-', '--')
 MARKERS = ('o', 'D', 'o', 'D')
-THRESHOLDS = (0.20, 0.25, 1 / 3)
 TRANSPORTERS = {'Slc17a3': 'NPT4', 'Slc17a1': 'NPT1', 'Slc22a12': 'URAT1',
                 'Slc22a6': 'OAT1', 'Slc22a7': 'OAT2', 'Slc22a8': 'OAT3'}
 WIDTH_MM = 183
@@ -72,28 +70,6 @@ def profile_panels(axs, screen, axes):
     axs[0].set_ylabel('Relative to fitted peak (log₂)')
 
 
-def overlap_table(units):
-    """Expected joint-high rate from the product of high fractions within each depth stratum."""
-    rows = []
-    displayed = {}
-    for section in SECTIONS:
-        block = units[units['sample'].eq(section)]
-        depth = depth_strata(block.library)
-        for fraction in THRESHOLDS:
-            high = high_expression(block, fraction)
-            high['both'] = high[GENES[0]] & high[GENES[1]]
-            strata = high.groupby(depth)
-            marginal = strata[GENES[:2]].mean()
-            expected = (marginal.prod(axis=1) * strata.size()).sum() / len(high)
-            observed = high.both.mean()
-            rows.append({'section': section, 'fraction': fraction, 'n': len(high),
-                         'joint_high': int(high.both.sum()), 'observed': observed, 'expected': expected,
-                         'observed_expected': observed / expected})
-            if fraction == 0.25:
-                displayed[section] = high
-    return pd.DataFrame(rows), displayed
-
-
 def tissue_panel(ax, units, background, displayed):
     """Overlay high-expression calls on native tissue centroids, omitting COAST coordinates."""
     dims = ax.get_position()
@@ -125,7 +101,7 @@ def overlap_panel(ax, overlap):
     ax.axhline(1, color='0.65', lw=0.65, zorder=0)
     for i, section in enumerate(SECTIONS):
         s = overlap.loc[overlap.section.eq(section), 'observed_expected']
-        ax.plot(range(len(THRESHOLDS)), s, color=SECTION_COLORS[i], ls=STYLES[i], marker=MARKERS[i], ms=3, lw=1)
+        ax.plot(range(len(HIGH_FRACTIONS)), s, color=SECTION_COLORS[i], ls=STYLES[i], marker=MARKERS[i], ms=3, lw=1)
     ax.set(xlim=(-0.2, 2.2), xticks=range(3), xticklabels=['20%', '25%', '33%'],
            xlabel='High-expression threshold', ylabel='Joint high · observed / expected')
 
@@ -149,37 +125,17 @@ def transporter_panel(ax, genes):
 
 def robustness_table(units, genes, heldout, axes):
     """Contrast of raw endpoint contrasts, URAT1 minus NPT4, under four definitions."""
+    raw = raw_endpoint_contrasts(units, axes, GENES[:2])
     rows = []
-    for i, section in enumerate(SECTIONS):
-        block = units[units['sample'].eq(section)]
-        early = block.segment.eq(0)
-        late = block.segment.eq(2)
-        core_early = early & block.position.le(axes['b12'] - MARGIN)
-        core_late = late & block.position.ge(axes['b23'] + MARGIN)
-        if i < 2:
-            cutoff = block.loc[core_early, 'glom_distance'].quantile(0.90)
-            restricted_early = core_early
-            restricted_late = core_late & block.glom_distance.le(cutoff)
-        else:
-            low_mito = block.mito.le(block.mito.quantile(1 / 3))
-            restricted_early = core_early & low_mito
-            restricted_late = core_late & low_mito
-        row = {'section': section}
-        for name, masks in (('All labels', (early, late)), ('QC subset', (restricted_early, restricted_late))):
-            rates = []
-            for mask in masks:
-                library = block.loc[mask, 'library'].sum()
-                if library <= 0:
-                    raise ValueError(f'{section}: {name} includes an endpoint without expression coverage')
-                counts = block.loc[mask, GENES[:2]].sum(axis=0) + 0.5
-                rates.append(np.log2(1e4 * counts / library))
-            diff = rates[1] - rates[0]
-            row[name] = diff[GENES[1]] - diff[GENES[0]]
-        for name, table in (('Cores', genes), ('Held out', heldout)):
-            vals = table.loc[GENES[:2], f'R_{section}']
-            row[name] = vals.iloc[1] - vals.iloc[0]
-        rows.append(row)
-    return pd.DataFrame(rows).set_index('section')[['Cores', 'All labels', 'Held out', 'QC subset']]
+    for section in SECTIONS:
+        values = {
+            'Cores': genes.loc[GENES[:2], f'R_{section}'],
+            'All labels': raw[f'all_labels_{section}'],
+            'Held out': heldout.loc[GENES[:2], f'R_{section}'],
+            'QC subset': raw[f'qc_subset_{section}'],
+        }
+        rows.append({'section': section, **{name: val.iloc[1] - val.iloc[0] for name, val in values.items()}})
+    return pd.DataFrame(rows).set_index('section')
 
 
 def robustness_panel(ax, robustness):
