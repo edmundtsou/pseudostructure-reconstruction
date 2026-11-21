@@ -1,32 +1,34 @@
 # Fig. 5 Results: outline with significance per result
 
-## Recommended Fig. 5 story (2026-11-21)
+## Fig. 5 overview
 
-**The proximal tubule expression profiles of urate export and reuptake transporters overlap in mouse and
-separate in the sampled human kidney.** The figure and Results below use only the four study Visium HD
-sections. The published papers inform panel design and the annotation of transport roles.
+**Proximal tubule expression changes follow four positional patterns.** The heatmaps show all 474 orthologs
+called by the shape-difference screen, with the same gene order in the two mouse kidneys and the two cortical
+sections from one human kidney. The urate and organic-anion pairs show how changes in individual profiles alter
+the relative positions of transport components. All measurements are from the study's Visium HD sections.
 
 ### Manuscript Results
 
-The [mouse–human Results](results_fig5_fig6.md) open with a question about the relative positions of transport
-components. The ortholog screen supplies context for the urate example, the native tissue counts test
-joint enrichment, and the OAT3–MRP2 comparison shows that another uptake and efflux pair changes in the
-opposite direction. The Fig. 5 legend below and the companion comparison supply the assay details.
+The [mouse–human Results](results_fig5_fig6.md) first present the screen, matched heatmaps and four average
+profiles. The urate and organic-anion examples then compare two pairs with different patterns of overlap.
+The raw-count test uses their original tubule profiles with matching for library depth and mitochondrial fraction.
 
 ### Figure legend
 
-**Fig. 5 | Axial expression of urate export and reuptake transporters.** All panels use the two mouse kidneys
-and two cortical sections of one human kidney profiled in this study. **a,** Mean fitted late-minus-early
-expression contrast by species for 3,908 assessable orthologs. Purple denotes the 60 reversals supported
-by raw counts in the four sections. **b,c,** Section-specific COAST fits and observed log₂ rates in 20
-position bins, each shifted by the fitted peak for that gene and section. Solid/circle and dashed/diamond
-denote sections 1 and 2. **d,** Tubule profile centroids in native tissue coordinates, uniformly rescaled
-within each section for display. Coloured profiles rank in the top quarter for either or both transcripts
-within non-mitochondrial library-depth strata. **e,** Observed joint-high fraction divided by the expectation
-under independence within depth strata at three high-expression thresholds. **f,** Raw late-minus-early
-log₂ rates for six urate transport genes. **g,** URAT1 minus NPT4 raw late-minus-early log₂ contrasts.
-The four checks use endpoint cores, all units with endpoint segment labels, gene-held-out COAST axes,
-or restricted cores (glomerulus-distance proxy in mouse and lowest mitochondrial-fraction tertile in human).
+**Fig. 5 | Proximal tubule expression patterns in mouse and human.** **a,** Fitted profiles of all 474
+shape-difference calls, from 873 eligible one-to-one orthologs. A gene was eligible if its fitted profile varied
+by at least 0.5 log₂ units (about 1.4-fold) in both sections of at least one group. Of the called genes, 122 meet
+that amplitude criterion in both groups, 280 only in mouse and 72 only in human. Profiles show log₂ counts
+per 10,000 plus 0.5 in counts space, centered within each section. For each gene, all four curves are divided
+by the largest of its four within-section SDs. The shared scale preserves differences in the amplitude of
+a gene's profiles. Rows are ordered by shape cluster and then by the magnitude of the screened difference.
+Each column uses the common fitting interval at 0.09–0.945 on the COAST mouse-reference quantile scale.
+**b,** Section-level mean profiles for the four groups from a. Group names describe the mean peak positions
+from mouse to human. **c,d,** Per-section curves and observed position bins for the NPT4–URAT1 and OAT3–MRP2
+pairs. Each log₂ rate is expressed relative to the gene's fitted peak for that section and divided by the
+gene's largest fitted range across the four sections. **e,** Joint-high profiles relative to the expected count
+under independence. High means the top quarter of expression within library-depth and mitochondrial-fraction
+strata. The four markers represent two mouse kidneys and two cortical sections of one human kidney.
 
 ### Evidence and interpretation
 
@@ -38,7 +40,7 @@ or restricted cores (glomerulus-distance proxy in mouse and lowest mitochondrial
   be high in the same profile. The contrast is in the frequency of strong joint expression. The independence
   comparison is descriptive, and the four sections are the units displayed. With mitochondrial-fraction
   tertiles nested within depth strata, the human joint-high rates are close to the independence expectation.
-- Panel f displays all six assessable genes from the eight transporters previously analysed by apical or
+- The supporting urate analysis includes all six assessable genes from the eight transporters previously analysed by apical or
   basolateral role. SLC22A11 and SLC2A9 are absent from this assessable shared screen. Among the three
   basolateral uptake genes shown, OAT1 and OAT3 are early-weighted and OAT2 late-weighted in both species.
   The opposing NPT4 and URAT1 profiles motivate a component-level claim. No Fig. 5 pathway set passes the
@@ -77,9 +79,9 @@ output. The human comparisons remain scoped to one donor.
 | Paper | How the biological section develops | Application to Fig. 5 |
 |---|---|---|
 | **Yakubovsky et al., Fig. 3** | Starts with a quantified overview of shared and discordant zonation. Names examples from the comparison, then groups them into a specific biological process such as the urea cycle. Additional species test the scope of the observation. | Use the ortholog screen to locate the question. Move quickly to the urate comparison, with the conclusion scoped to the two mouse kidneys and the sampled human kidney. [Results and Fig. 3](https://www.nature.com/articles/s41586-026-10377-y) |
-| **Harnik et al., Figs. 3–4** | Evaluates whether anatomical sampling accounts for the cross-species pattern, then compares concordant and discordant genes and examines the tissue context. | Report how the key contrast behaves with segment labels, held-out coordinates and restricted subsets. Use the original tissue coordinates to show where joint expression was measured. [Fig. 3](https://www.nature.com/articles/s41586-024-07793-3/figures/3) [Fig. 4](https://www.nature.com/articles/s41586-024-07793-3/figures/4) |
-| **Moor et al., Figs. 5–6** | Moves from nutrient classes to individual profiles and spatial measurements, then asks whether the profiles of related genes agree. The purine example uses biochemical roles to explain the choice of genes. | Describe NPT4 and URAT1 together and quantify how often both transcripts are high in the same tubule profile. The measured tissue centroids and the fitted profiles come from the same Visium assay. [Figures and Results](https://shalevlab.weizmann.ac.il/wp-content/uploads/2018/09/Moor_2018.pdf) |
-| **Halpern et al., Fig. 4** | Uses the sequence of reactions in bile-acid synthesis to motivate a test of where each enzyme is expressed relative to the next. | Organize the urate example by opposing apical transport roles and the organic-anion example by basolateral uptake followed by apical export. The evidence concerns the relative positions of transcripts. [Results and Fig. 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC5321580/#F4) |
+| **Harnik et al., Figs. 3–4** | Evaluates whether anatomical sampling accounts for the cross-species pattern, then compares concordant and discordant genes and examines the tissue context. | Report how the key contrast behaves with segment labels, held-out coordinates and restricted subsets. Use raw tubule profiles to check joint expression. [Fig. 3](https://www.nature.com/articles/s41586-024-07793-3/figures/3) [Fig. 4](https://www.nature.com/articles/s41586-024-07793-3/figures/4) |
+| **Moor et al., Figs. 5–6** | Moves from nutrient classes to individual profiles and spatial measurements, then asks whether the profiles of related genes agree. The purine example uses biochemical roles to explain the choice of genes. | Describe NPT4 and URAT1 together and quantify how often both transcripts are high in the same tubule profile. The raw counts and fitted profiles come from the same Visium assay. [Figures and Results](https://shalevlab.weizmann.ac.il/wp-content/uploads/2018/09/Moor_2018.pdf) |
+| **Halpern et al., Figs. 3–4** | Sorts thousands of zonated profiles into a single heatmap, then uses the sequence of reactions in bile-acid synthesis to motivate a test of where each enzyme is expressed relative to the next. | Organize the urate example by opposing apical transport roles and the organic-anion example by basolateral uptake followed by apical export. The evidence concerns the relative positions of transcripts. [Results and Fig. 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC5321580/#F4) |
 
 The manuscript uses these papers as structural precedents. Every comparative expression result in the
 Fig. 5 section comes from the study's Visium HD sections.
@@ -93,9 +95,11 @@ The renderer uses the corresponding COAST QC, pass-1 labels and pseudospace file
 python analysis/paper/fig5_urate.py
 python analysis/paper/fig5_urate_figure.py
 python analysis/paper/fig5_story_comparison.py
+python analysis/paper/fig5_overview_figure.py
 ```
 
-The figure and descriptive overlap and endpoint sensitivity tables are written to
+The Fig. 5 overview and its heatmap row order are written to
+`results/paper_figures/fig5/overview/`. The focused urate diagnostics and sensitivity tables are written to
 `results/paper_figures/fig5/urate/`.
 The alternative-story plot and its two source tables are written to
 `results/paper_figures/fig5/story_comparison/`.

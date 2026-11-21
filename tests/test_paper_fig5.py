@@ -98,3 +98,32 @@ def test_tissue_matching_splits_depth_strata_by_mitochondrial_fraction():
     high = high_expression(units, fraction=0.5, genes=('a', 'b'), strata=strata)
     assert high.sum().tolist() == [30, 30]
     assert not high.all(axis=1).any()
+
+
+def test_global_heatmap_keeps_gene_order_and_between_section_amplitude(tmp_path):
+    import pandas as pd
+
+    from fig5_global_shapes import SECTIONS, load_global_shapes
+
+    shape_dir = tmp_path / 'shape_clusters'
+    screen_dir = tmp_path / 'screen'
+    shape_dir.mkdir()
+    screen_dir.mkdir()
+    pd.DataFrame({'gene': ['a', 'b'], 'changed': [True, True], 'cluster': [2, 1],
+                  'rms_condition': [1.4, 1.1]}).to_csv(shape_dir / 'genes.csv', index=False)
+    x = np.array([0.1, 0.5, 0.9])
+    pattern = np.array([[-1., 0., 1.], [1., 0., -1.]])
+    shapes, fits = {}, {}
+    for i, section in enumerate(SECTIONS):
+        amplitude = 1 if i < 2 else 0.25
+        signal = 3 + pattern * amplitude
+        shapes[f'z|{section}'] = pattern / pattern.std(axis=1, keepdims=True)
+        fits[f'curve|{section}'] = np.log2(np.exp2(signal) - 0.5)
+    np.savez(shape_dir / 'shapes.npz', x=x, genes=['a', 'b'], **shapes)
+    np.savez(screen_dir / 'all_curves.npz', grid=x, genes=['a', 'b'], **fits)
+
+    grid, genes, curves = load_global_shapes(tmp_path)
+    np.testing.assert_array_equal(grid, x)
+    assert genes.index.tolist() == ['b', 'a']
+    np.testing.assert_allclose(curves[0], shapes[f'z|{SECTIONS[0]}'][::-1])
+    np.testing.assert_allclose(curves[2], 0.25 * curves[0], atol=1e-12)
