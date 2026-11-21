@@ -1,4 +1,4 @@
-"""Describe Fig. 5 urate transporter profiles and check their directions in public data.
+"""Describe Fig. 5 urate transporter profiles in the study's Visium HD sections.
 
 The inputs and interpretation are documented in docs/paper/fig5-significance-outline.md.
 """
@@ -14,21 +14,6 @@ import pandas as pd
 REPO = Path(__file__).resolve().parents[2]
 GENES = ['Slc17a3', 'Slc22a12', 'Slc17a1']
 SECTIONS = ['Ctrl1A2', 'Ctrl1A4', 'HUK1_COR1', 'HUK1_MED1']
-
-
-def lake_endpoint_contrasts(cache: Path, min_nuclei: int) -> pd.DataFrame:
-    """Paired S3 minus S1 log2(CPM + 1) in the normal cortical donor groups from notebook 38."""
-    with np.load(cache) as lake:
-        meta = pd.DataFrame(
-            [group.split('|') for group in lake['groups']],
-            columns=['donor', 'sex', 'segment', 'region'],
-        )
-        keep = meta.region.eq('cortex') & (lake['counts'] >= min_nuclei)
-        rates = pd.DataFrame(lake['sums'], columns=lake['genes'])[GENES]
-        rates = np.log2(rates.div(lake['totals'], axis=0) * 1e6 + 1)
-        by_segment = rates.loc[keep].set_index([meta.donor[keep], meta.segment[keep]]).unstack('segment')
-    return (by_segment.xs('S3', axis=1, level='segment')
-            - by_segment.xs('S1', axis=1, level='segment')).dropna()
 
 
 def section_profiles(screen: Path) -> pd.DataFrame:
@@ -62,24 +47,12 @@ def section_profiles(screen: Path) -> pd.DataFrame:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('--data-root', type=Path, default=os.environ.get('PSEUDOSPACE_DATA_ROOT', REPO / 'data'))
     parser.add_argument('--results-root', type=Path,
                         default=os.environ.get('PSEUDOSPACE_RESULTS_ROOT', REPO / 'results'))
-    parser.add_argument('--lake-pseudobulk', type=Path, required=True, help='notebook 38 donor pseudobulk NPZ')
     args = parser.parse_args()
 
     print('COAST raw endpoint contrasts, supported maxima and profile correlations')
     print(section_profiles(args.results_root / 'paper_figures/fig5/screen').round(3).to_string())
-    for minimum in (50, 25):
-        contrast = lake_endpoint_contrasts(args.lake_pseudobulk, minimum)
-        print(f'\nLake normal cortical donors with at least {minimum} nuclei in each endpoint (n = {len(contrast)})')
-        print(pd.DataFrame({'median S3−S1': contrast.median().round(3), 'negative': (contrast < 0).sum(),
-                            'positive': (contrast > 0).sum()}).to_string())
-
-    mouse = pd.read_csv(args.data_root / 'external/segment_microdissection_sex/GSE212213_TPM_Male_Female.txt.gz',
-                        sep='\t', index_col='Gene_symbol')
-    print('\nChen microdissected mouse PT, mean TPM by sex and segment')
-    print(mouse.loc[GENES, ['PTS1', 'PTS2', 'PTS3', 'fPTS1', 'fPTS2', 'fPTS3']].to_string())
 
 
 if __name__ == '__main__':

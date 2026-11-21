@@ -2,110 +2,103 @@
 
 ## Recommended Fig. 5 story (2026-11-21)
 
-**Urate export and reuptake transporters occupy different positions relative to one another in mouse and human proximal tubules.**
-The apical urate exporter NPT4 and the apical reabsorptive exchanger URAT1 have closely tracking transcript
-profiles in mouse. In the human sections, NPT4 is weighted toward the early PT and URAT1 toward the late PT.
-This gives the gene-level screen a physiological question to answer. Does a transporter with the same role sit
-in the same part of the nephron relative to a transporter that moves the same substrate in the opposite direction?
-Transport roles are based on functional studies. [Jutabha et al.](https://pmc.ncbi.nlm.nih.gov/articles/PMC2966126/)
-[Enomoto et al.](https://www.nature.com/articles/nature742) [Hosoyamada et al.](https://pubmed.ncbi.nlm.nih.gov/14747372/)
+**The proximal tubule expression profiles of urate export and reuptake transporters overlap in mouse and
+separate in the sampled human kidney.** The figure and Results below use only the four study Visium HD
+sections. The published papers inform panel design and the annotation of transport roles.
 
 ### Suggested Results text
 
-#### Urate export and reuptake transporters show different axial expression relationships in mouse and human
+#### The relative positions of urate export and reuptake transcripts differ between mouse and human proximal tubules
 
-We used the shared COAST coordinate to compare gene expression along the proximal tubule in two control mouse
-kidneys and two healthy cortical sections from one human kidney. Among 3,908 assessable one-to-one orthologs,
-60 had opposite early-to-late expression contrasts in mouse and human, with matching directions in each species'
-two sections and agreement between fitted curves and raw counts. We examined this pattern in renal urate handling,
-where NPT4 (SLC17A3) exports urate into the tubular lumen and URAT1 (SLC22A12) mediates apical urate reuptake.
+We used the shared COAST coordinate to compare proximal tubule expression in two control mouse kidneys and two
+healthy cortical sections from one human kidney. Of 3,908 assessable one-to-one orthologs, 60 showed opposite
+early-to-late expression contrasts between mouse and human, with concordant directions in the two sections
+per species and agreement between fitted profiles and raw counts (Fig. 5a). We examined this pattern in urate
+handling by comparing NPT4 (SLC17A3), which exports urate into the lumen, with URAT1 (SLC22A12), which mediates
+apical urate reuptake. [NPT4 function](https://pmc.ncbi.nlm.nih.gov/articles/PMC2966126/)
+[URAT1 function](https://www.nature.com/articles/nature742)
 
-In mouse, NPT4 and URAT1 transcript profiles rose together through the early proximal tubule and reached their
-fitted maxima near the middle of the coordinate. In both human sections, NPT4 was highest early and URAT1 was
-highest late. Raw expression from 20 position bins agreed with the fitted profiles. NPT4 and URAT1 were positively
-correlated in both mice (Pearson \(r = 0.98\) in each) and negatively correlated in both human sections
-(\(r = -0.66\) and \(-0.64\)). In independent microdissected mouse tubules, both transcripts were higher in
-S2 and S3 than in S1 in the male and female profiles. In the Lake human kidney atlas, NPT4 was higher in
-PT-S1 than PT-S3 in 11 of 12 eligible healthy cortical donors, while URAT1 was higher in PT-S3 than PT-S1
-in all 12. NPT1 (SLC17A1), a second apical urate exporter, followed the direction of NPT4 in both datasets.
-These profiles suggest that two opposing components of apical urate transport are more separated along the
-human proximal tubule at the transcript level. [Mouse microdissection](https://doi.org/10.1681/asn.0000000000000089)
-[Lake human atlas](https://doi.org/10.1038/s41586-023-05769-3)
-[NPT1 transport assay](https://pubmed.ncbi.nlm.nih.gov/20566650/)
+NPT4 and URAT1 transcript profiles rose together in both mice and peaked near the middle of the shared
+coordinate. In both human sections, NPT4 peaked early and URAT1 peaked late (Fig. 5b,c). The observed
+expression profiles across 20 position bins were positively correlated in mouse (Pearson r = 0.98 in each
+kidney) and negatively correlated in the human sections (r = −0.66 and −0.64).
 
-**Discussion implication.** Mouse models both transport processes, with enrichment of the two transcripts in
-a similar part of the tubule. If the human transcript separation is reflected in apical protein
-localization, experiments based on mouse tubules may assign the wrong relative positions to the sites of NPT4
-export and URAT1 reuptake. Measuring both proteins in anatomically identified proximal tubules would test that
-prediction.
+We next mapped tubule profiles with high expression of each transcript back to their measured tissue
+locations (Fig. 5d). Using the top quarter of expression for each gene within sequencing-depth strata,
+the two transcripts were jointly high in 9.0% and 9.4% of all mouse profiles and 5.4% and 5.7% of all
+human profiles. These frequencies were 1.43 and 1.48 times the depth-matched independence expectations
+in the two mice, and 0.86 and 0.91 times the expectations in the human sections. The same ordering held
+when high expression was defined at the top fifth or third (Fig. 5e). This comparison used the observed
+counts and tubule profiles without referring to a position on the COAST axis.
 
-### Evidence for the urate comparison
+NPT1 (SLC17A1), a second apical urate exporter, followed the same endpoint directions as NPT4. URAT1
+remained late-weighted in all four sections, and the measured basolateral organic anion transporters
+retained their own endpoint directions across the species (Fig. 5f). The difference between the URAT1
+and NPT4 endpoint contrasts ranged from −0.22 to +0.02 log₂ units across the mouse checks and from
++2.16 to +3.15 in the human sections, including with segment labels alone and with each gene held out of
+the coordinate used to measure it (Fig. 5g). These patterns place the two opposing apical transport
+transcripts in different parts of the proximal tubule in the sampled human kidney. The human evidence
+comes from one donor, and the measurements concern RNA. [NPT1 function](https://pubmed.ncbi.nlm.nih.gov/20566650/)
 
-| Readout | Mouse | Human |
-|---|---|---|
-| NPT4 raw late-minus-early log2 rate | +1.15, +1.43 | −1.57, −1.93 |
-| URAT1 raw late-minus-early log2 rate | +0.94, +1.24 | +1.58, +1.04 |
-| NPT1 raw late-minus-early log2 rate | +0.83, +0.86 | −0.47, −0.75 |
-| URAT1 minus NPT4 fitted peak position, mouse-reference coordinate | 0.10, 0.03 | 0.58, 0.59 |
-| NPT4–URAT1 Pearson correlation, raw position bins | +0.98, +0.98 | −0.66, −0.64 |
+### Figure legend
 
-- NPT4 was detected in 92% of PT tubule profiles in each mouse and in 74% and 66% of profiles in the human
-  sections. Its direction persists after restricting late mouse tubules to the cortical proxy and restricting
-  each human section to its lowest mitochondrial-fraction tertile. Both genes retain their endpoint directions
-  on the archived gene-half axes. In that run, each transcript was assessed on a coordinate built without it.
-  Raw endpoints use early and late cores on COAST with concordant PT labels. The independent atlas endpoint
-  check uses author-labelled PT-S1 and PT-S3, without COAST or our probe panels.
-- The atlas check uses paired log2(CPM + 1) differences from cortex-only normal donors with at least 50 nuclei
-  in each endpoint. Median differences were −1.24 for NPT4, +1.24 for URAT1 and −0.46 for NPT1. At a 25-nucleus
-  floor, NPT4 and NPT1 were earlier in 12 of 13 donors each, and URAT1 was later in all 13. NPT1 has the same
-  endpoint directions internally, with one human fitted contrast below the screen's 0.5 log2 cutoff. It is
-  supporting evidence from a specified transport role.
-- Sakaguchi et al. already reported early weighting of NPT4 and NPT1 and late weighting of URAT1 in human
-  nuclei. The contribution here is the cross-species contrast between overlapping mouse profiles and separated
-  human profiles. The external sources support the endpoint directions. The peak gaps describe positions on
-  the mouse-reference quantile scale, and the bin correlations summarize profiles within each section.
-  [Sakaguchi et al., Table 1](https://pmc.ncbi.nlm.nih.gov/articles/PMC10763458/)
-- The focused comparison is post hoc and supports axial patterning of the named transcripts. Quantifying
-  protein abundance and net urate flux would require separate measurements. In Lake, the median human OAT1
-  endpoint contrast is slightly positive, opposite to both Visium sections. Other components of the secretory
-  and reabsorptive pathways have incomplete shared-panel coverage or fail expression checks.
+**Fig. 5 | Axial expression of urate export and reuptake transporters.** All panels use the two mouse kidneys
+and two cortical sections of one human kidney profiled in this study. **a,** Mean fitted late-minus-early
+expression contrast by species for 3,908 assessable orthologs. Purple denotes the 60 reversals supported
+by raw counts in the four sections. **b,c,** Section-specific COAST fits and observed log₂ rates in 20
+position bins, each shifted by the fitted peak for that gene and section. Solid/circle and dashed/diamond
+denote sections 1 and 2. **d,** Tubule profile centroids in native tissue coordinates, uniformly rescaled
+within each section for display. Coloured profiles rank in the top quarter for either or both transcripts
+within non-mitochondrial library-depth strata. **e,** Observed joint-high fraction divided by the expectation
+under independence within depth strata at three high-expression thresholds. **f,** Raw late-minus-early
+log₂ rates for six urate transport genes. **g,** URAT1 minus NPT4 raw late-minus-early log₂ contrasts.
+The four checks use endpoint cores, all units with endpoint segment labels, gene-held-out COAST axes,
+or restricted cores (glomerulus-distance proxy in mouse and lowest mitochondrial-fraction tertile in human).
 
-### Figure and supporting examples
+### Evidence and interpretation
 
-1. Keep the tissue overview and put the global screen in one compact panel. The current single-coordinate
-   run has 873 shape-eligible genes, 474 descriptive shape calls and 60 stricter, raw-count-supported reversals
-   among 3,908 assessable genes. These are two different denominators. No pathway passes the corrected threshold
-   in either the 895-set endpoint screen or the 129-set shape screen. Move descriptive pathway means out of the
-   main argument.
-2. Give NPT4 and URAT1 the central panel. Put mouse and human side by side, with both genes, both section curves
-   and raw bin points. Add the paired donor endpoint contrasts and sex-stratified mouse microdissection profiles
-   alongside it. Use gene-wise scaling for the display and place any mouse boundaries below the mouse panel.
-   The continuous profiles show overlap around the mouse mid-PT and separate expression maxima in human. A
-   discrete endpoint comparison independently captures the direction of the difference.
-3. Keep glucose as a shorter example of conserved ordering with a different expression transition. SGLT2
-   precedes SGLT1 in both species. The crossing of their separately min–max-scaled curves is at 0.37–0.40 in
-   mouse and 0.65–0.67 in the human sections on the mouse-reference coordinate. Human SLC5A1 is detected in
-   about 6% of tubule profiles, and published human brush-border staining supports the ordering at segment
-   resolution. Keep the crossing as an illustrative transcript transition in this cohort.
-   [Vrhovac et al.](https://pubmed.ncbi.nlm.nih.gov/25304002/)
-4. Keep MME and DCXR as short examples or in Extended Data. Both reverse in the current screen, with the same
-   directions in mouse microdissection and paired human atlas donors. Retain the B0AT1/B0AT3 curves as descriptive
-   if shown. Human SLC6A18 transcripts cannot establish an active counterpart to mouse B0AT3. Phosphate has a
-   strong independent physiological literature, but PiT-2 (SLC20A2) is missing from the current shared screen,
-   limiting a three-transporter comparison here. [B0AT3 function](https://pmc.ncbi.nlm.nih.gov/articles/PMC4591816/)
-   [Phosphate transport study](https://pmc.ncbi.nlm.nih.gov/articles/PMC13396815/)
+- The maps and joins use the same COAST v4fix run as the curves. At each threshold, rank nonzero counts
+  per non-mitochondrial library separately for each gene in each of ten near-equal depth strata of a section.
+  Select up to the specified fraction of each stratum, with stable tie order. At 25%, observed joint-high
+  counts are 244, 258, 171 and 192. The respective within-stratum independence expectations are 170.5,
+  173.8, 198.8 and 210.5. In both human cortex sections, many profiles carry each transcript and both can
+  be high in the same profile. The contrast is in the frequency of strong joint expression. The independence
+  comparison is descriptive, and the four sections are the units displayed.
+- Panel f displays all six assessable genes from the eight transporters previously analysed by apical or
+  basolateral role. SLC22A11 and SLC2A9 are absent from this assessable shared screen. Among the three
+  basolateral uptake genes shown, OAT1 and OAT3 are early-weighted and OAT2 late-weighted in both species.
+  The opposing NPT4 and URAT1 profiles motivate a component-level claim. No Fig. 5 pathway set passes the
+  corrected threshold. [Transport role annotations](https://pmc.ncbi.nlm.nih.gov/articles/PMC10763458/)
+- The rank-free checks still start from the study's assigned PT profiles. COAST position is on a
+  mouse-reference quantile scale. The glomerulus-distance subset is a cortical proxy, and the tissue
+  centroids do not trace a complete tubule. The similar mouse profiles and divergent human profiles
+  motivate a spatial protein-localization question. They do not measure transport activity.
+
+### Figure precedents
+
+- The global contrast and named close-ups follow the cross-species logic of Harnik Fig. 3 and Yakubovsky
+  Fig. 3. Harnik Fig. 4 pairs mapped tissue features with their quantitative profile.
+  [Harnik Fig. 3](https://www.nature.com/articles/s41586-024-07793-3/figures/3)
+  [Harnik Fig. 4](https://www.nature.com/articles/s41586-024-07793-3/figures/4)
+  [Yakubovsky Fig. 3](https://pmc.ncbi.nlm.nih.gov/articles/PMC13216088/#Fig3)
+- Moor Figs. 5–6 and Halpern Fig. 4 join the behavior of related components with expression measured in
+  tissue coordinates. Our corresponding panels show the transport components, the tissue maps and the
+  depth-matched overlap check from our Visium measurements.
+  [Moor Figs. 5–6](https://shalevlab.weizmann.ac.il/wp-content/uploads/2018/09/Moor_2018.pdf)
+  [Halpern Fig. 4](https://pmc.ncbi.nlm.nih.gov/articles/PMC5321580/#F4)
 
 ### Reproduce the comparison
 
-Use `results/paper_figures/fig5/screen` from the November 18 single-coordinate COAST run on v4fix and the
-normal-donor Lake cortex/medulla pseudobulk cache from notebook 38. The mouse TPMs come from GSE212213.
-The focused comparison reads the existing screen and public references without refitting or changing the
-frozen screens.
+Use the November 18 single-coordinate COAST screen on v4fix and its archived gene-half run.
+The renderer uses the corresponding COAST QC, pass-1 labels and pseudospace files.
 
 ```bash
-python analysis/paper/fig5_urate.py \
-  --lake-pseudobulk results/pt_literature_deep/stage_cache/lake_pt_pseudobulk__80a7dbd8b164f678.npz
+python analysis/paper/fig5_urate.py
+python analysis/paper/fig5_urate_figure.py
 ```
+
+The figure and descriptive overlap and endpoint sensitivity tables are written to
+`results/paper_figures/fig5/urate/`.
 
 ## Earlier outline (2026-11-11)
 

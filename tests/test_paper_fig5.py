@@ -64,3 +64,19 @@ def test_flattening_residual_removes_a_uniform_attenuation():
     d, pairs, lines = flattening_residuals(E, np.ones(500, bool), 'species')
     assert all(abs(s - 0.4) < 0.02 for _, s in lines)
     assert abs(d[0]) > 0.5 * abs(m[0]) and np.median(np.abs(d[1:])) < 0.02
+
+
+def test_urate_high_expression_is_depth_stratified_and_requires_detection():
+    import pandas as pd
+
+    from fig5_urate_tissue import high_expression
+
+    units = pd.DataFrame({
+        'library': np.repeat(np.arange(1, 11) * 100, 4),
+        'Slc17a3': np.tile([0, 2, 0, 0], 10),
+        'Slc22a12': np.tile([1, 2, 3, 4], 10),
+    })
+    flags = high_expression(units, fraction=0.5)
+    assert flags.index.equals(units.index)
+    assert flags.Slc17a3.tolist() == [False, True, False, False] * 10
+    assert flags.Slc22a12.tolist() == [False, False, True, True] * 10
