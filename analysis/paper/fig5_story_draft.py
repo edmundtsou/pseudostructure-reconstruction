@@ -28,12 +28,8 @@ S2_CLASSES = {
     'S2 trough': ('Trough', '#999999'),
     'on at S2': ('On', '#65527E'),
 }
-SWITCH_CLASSES = {
-    'early in mouse, delayed in human (model)': ('#C17B35', 'Delayed early'),
-    'late in both (model)': ('#4D71A0', 'Late in both'),
-    'early in both (conserved early)': ('#5F8A72', 'Early in both'),
-}
-OTHER_SWITCH = ('#CCCCCC', 'Other')
+SWITCH_DISPLACEMENT = .10
+SWITCH_COLORS = ('#BFC3C8', '#AF602A')
 S2_BAND = (.36, .65)
 LATE_GENES = ('Gpt', 'Dcxr', 'Ggact', 'Pter', 'Abhd14a')
 
@@ -101,13 +97,14 @@ def screen_panel(ax, meta):
 
 def switch_panel(ax, switches):
     bins = np.linspace(0, 1, 21)
+    distance = (switches.human_switch_plot - switches.mouse_switch).abs().round(3)
+    moved = distance.ge(SWITCH_DISPLACEMENT)
+    groups = (~moved, moved)
     # Bars point away from one baseline so both species can share one positional scale.
-    labels = switches['class'].where(switches['class'].isin(SWITCH_CLASSES), 'Other')
-    styles = {**SWITCH_CLASSES, 'Other': OTHER_SWITCH}
     for sign, col in ((1, 'mouse_switch'), (-1, 'human_switch_plot')):
         baseline = np.zeros(len(bins) - 1)
-        for label, (color, _) in styles.items():
-            counts, _ = np.histogram(switches.loc[labels.eq(label), col], bins=bins)
+        for group, color in zip(groups, SWITCH_COLORS):
+            counts, _ = np.histogram(switches.loc[group, col], bins=bins)
             ax.bar(bins[:-1], sign * counts, width=np.diff(bins)*.91, align='edge',
                    bottom=sign * baseline, color=color, lw=0)
             baseline += counts
@@ -117,10 +114,12 @@ def switch_panel(ax, switches):
            ylabel='Genes per bin', xlabel='Switch position')
     ax.text(.04, .84, 'Mouse', transform=ax.transAxes, c=COLORS[0], fontsize=6.5, fontweight='bold')
     ax.text(.04, .09, 'Human', transform=ax.transAxes, c=COLORS[1], fontsize=6.5, fontweight='bold')
+    cutoff = f'{SWITCH_DISPLACEMENT:.2f}'
+    labels = (f'Similar (<{cutoff}), {(~moved).sum()} genes', f'Moved (≥{cutoff}), {moved.sum()} genes')
     handles = [Line2D([], [], marker='s', color=color, ls='', markersize=3.7, label=label)
-               for color, label in styles.values()]
-    ax.legend(handles=handles, loc='upper center', bbox_to_anchor=(.50, -.195), ncol=4,
-              fontsize=5.4, handletextpad=.25, handlelength=.7, columnspacing=.75)
+               for color, label in zip(SWITCH_COLORS, labels)]
+    ax.legend(handles=handles, loc='upper center', bbox_to_anchor=(.50, -.195), ncol=2,
+              fontsize=5.7, handletextpad=.4, handlelength=.8, columnspacing=.9)
 
 
 def shade_s2(ax):
