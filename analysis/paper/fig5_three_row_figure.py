@@ -1,4 +1,4 @@
-"""Draft Fig. 5 from the full ortholog universe, twofold positional filters and raw count examples."""
+"""Draft Fig. 5 from the full ortholog universe and the twofold positional filter."""
 from __future__ import annotations
 
 import argparse
@@ -32,7 +32,7 @@ CLUSTER_NAMES = ('Early +\nLate −', 'Early −\nLate +', 'Early dip', 'Middle 
 STATUS_COLORS = ('#537741', '#868789', '#AE4D39')
 HEAT = LinearSegmentedColormap.from_list('centered_expression', ['#234A7B', '#F9F7F1', '#AD401F'])
 WIDTH_MM = 183
-HEIGHT_MM = 195
+HEIGHT_MM = 225
 
 
 def load_profiles(root):
@@ -176,16 +176,14 @@ def counts_grid(ax, values, column_labels, colors, row_labels=()):
         ax.axvline(j - .5, color='white', lw=.8)
 
 
-def examples(root, axs, x, fit, order):
+def plot_profiles(root, axs, x, fit, order):
     with np.load(root / 'curve_audit/reaggregated_counts.npz') as raw:
         indices = pd.Index(raw['genes']).get_indexer(order)
         if (indices < 0).any() or raw['sections'].tolist() != SECTIONS:
             raise ValueError('The count audit does not match Fig. 5 genes or sections')
         xx = raw['centers']
         yy = raw['profiles'][:, indices]
-    for j, (ax, name, role) in enumerate(zip(axs, order, (
-        'Conserved transport', 'Conserved peptidase', 'Earlier in human', 'Later in human',
-    ))):
+    for j, (ax, name) in enumerate(zip(axs, order)):
         offset = fit[:, j].mean(-1)
         for i in range(4):
             color = SPECIES_COLORS[i // 2]
@@ -195,9 +193,10 @@ def examples(root, axs, x, fit, order):
         ax.axhline(0, lw=.55, color='.82')
         ax.set(xlim=(.14, .93), xticks=[.2, .5, .8])
         ax.set_xticklabels(['0.2', '0.5', '0.8'])
-        heading(ax, 'fghi'[j], name.upper(), y=1.14)
-        ax.set_title(role, loc='left', fontsize=6.5, pad=4.5)
-    axs[0].set_ylabel('Centered log₂ rate')
+        title = 'DPEP1 · conserved' if name == 'Dpep1' else name.upper()
+        heading(ax, ax.get_gid(), title, y=1.10)
+    for ax in axs[::4]:
+        ax.set_ylabel('Centered log₂ rate')
 
 
 def render(root):
@@ -206,19 +205,24 @@ def render(root):
     program = program_counts(root, retained)
     order = np.argsort(-means[0] @ (x - x.mean()), kind='stable')
     keep = table.index.get_indexer(retained.index)
-    names = ['Slc6a19', 'Dpep1', 'Mme', 'Pck1']
-    if not pd.Index(names).isin(retained.index).all():
-        raise ValueError('Draft examples must pass the requested twofold filter')
+    peaks = x[fit.argmax(axis=-1)]
+    shift = pd.Series(peaks[2:].mean(0) - peaks[:2].mean(0), index=table.index)
+    divergent = shift.loc[retained.index[retained.divergent]].sort_values(ascending=False)
+    earlier, later = divergent[divergent < 0], divergent[divergent > 0]
+    if (len(earlier), len(later)) != (4, 3) or not retained.loc['Dpep1', 'conserved']:
+        raise ValueError('The current eight-panel layout requires four earlier and three later profiles and DPEP1')
+    names = [*earlier.index, *later.index, 'Dpep1']
     plt.rcParams.update({'font.family': 'sans-serif', 'font.size': 7, 'axes.labelsize': 6.6,
                          'axes.spines.top': False, 'axes.spines.right': False, 'axes.linewidth': .55,
                          'xtick.major.size': 2, 'ytick.major.size': 2, 'pdf.fonttype': 42, 'svg.fonttype': 'none'})
     fig = plt.figure(figsize=(WIDTH_MM / 25.4, HEIGHT_MM / 25.4))
-    grid = fig.add_gridspec(3, 24, height_ratios=(1.68, 1.12, 1), top=.855, bottom=.123,
-                            left=.08, right=.976, hspace=.67, wspace=.55)
+    grid = fig.add_gridspec(3, 24, height_ratios=(1.68, 1.12, 2.1), top=.868, bottom=.111,
+                            left=.08, right=.976, hspace=.55, wspace=.55)
     a, b, c = [fig.add_subplot(spec) for spec in (grid[0, :6], grid[0, 8:13], grid[0, 15:])]
     d, e = [fig.add_subplot(spec) for spec in (grid[1, 5:14], grid[1, 15:])]
-    bottom = [fig.add_subplot(grid[2, i:i + 5]) for i in (0, 6, 12, 18)]
-    for ax, letter in zip([a, b, c, d, e, *bottom], 'abcdefghi'):
+    profiles = grid[2, :].subgridspec(2, 24, hspace=.74, wspace=.55)
+    bottom = [fig.add_subplot(profiles[j, i:i + 5]) for j in range(2) for i in (0, 6, 12, 18)]
+    for ax, letter in zip([a, b, c, d, e, *bottom], 'abcdefghijklm'):
         ax.set_gid(letter)
     fig.text(.054, .969, 'Proximal tubule expression in mouse and human', weight='bold', fontsize=11, va='top')
     fig.text(.054, .928, 'Two mouse kidneys and two cortical sections from one human donor', fontsize=7.3, color='.26')
@@ -244,7 +248,12 @@ def render(root):
     counts_grid(e, program[['conserved', 'intermediate', 'divergent']],
                 ['Conserved', 'Intermediate', 'Divergent'], STATUS_COLORS)
 
-    examples(root, bottom, x, fit[:, table.index.get_indexer(names)], names)
+    plot_profiles(root, bottom, x, fit[:, table.index.get_indexer(names)], names)
+    lower = bottom[0].get_position()
+    fig.text(lower.x0, lower.y1 + .052, f'All {len(divergent)} divergent profiles', weight='bold', fontsize=8.4)
+    fig.text(lower.x0, lower.y1 + .029, f'Earlier peak in human ({len(earlier)})', fontsize=6.8, color='.29')
+    later_row = bottom[4].get_position()
+    fig.text(later_row.x0, later_row.y1 + .029, f'Later peak in human ({len(later)})', fontsize=6.8, color='.29')
     pairs = pd.read_csv(root / 'curve_audit/observed_program_pairs.csv')
     pair = pairs.loc[pairs.gene_a.eq('Mme') & pairs.gene_b.eq('Dpep1'), SECTIONS].to_numpy().ravel()
     if pair.size != 4 or not np.isfinite(pair).all():
@@ -259,7 +268,8 @@ def render(root):
              'Cluster labels describe the human-minus-mouse contrast.', color='.28', fontsize=6.2)
     table = table.assign(cluster=retained.cluster,
                          all_order=pd.Series(np.arange(1, len(order) + 1), index=table.index[order]),
-                         cluster_order=pd.Series(np.arange(1, len(keep) + 1), index=retained.index))
+                         cluster_order=pd.Series(np.arange(1, len(keep) + 1), index=retained.index),
+                         profile_panel=pd.Series([ax.get_gid() for ax in bottom], index=names))
     return fig, color_ax, table, program
 
 

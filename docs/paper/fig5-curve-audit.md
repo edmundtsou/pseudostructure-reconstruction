@@ -20,11 +20,12 @@ represent the fraction of that row in the corresponding cluster or shape categor
 overlap. For programs with only one or a few comparable members, the panel shows their coverage and
 individual outcomes. All 14 comparable members of the selected solute-carrier transport set are conserved.
 
-**f–i. Representative profiles.** Four genes meeting the positional filter illustrate conservation,
-an earlier profile in human and a later profile in human. Lines represent section fits and points show
-fixed-width position-bin counts normalized by non-mitochondrial library size. Species comparisons use
-within-section centered rates. The MME–DPEP1 correlations use observed position-bin rates within each
-section. Throughout, the human comparison uses two cortical sections from one donor.
+**f–m. All seven divergent profiles and a conserved reference.** The fitted peaks are earlier in both
+human sections for SLC17A3, UGT3A1, APOC3 and MME, and later for TMEM252, PCK1 and MSRB1. DPEP1 is
+the conserved reference for MME. Lines represent section fits and points show fixed-width position-bin
+counts normalized by non-mitochondrial library size. Species comparisons use within-section centered
+rates. The MME–DPEP1 correlations use observed position-bin rates within each section. Throughout, the
+human comparison uses two cortical sections from one donor.
 
 Run `python analysis/paper/fig5_curve_audit.py` to prepare the fixed-width counts and then
 `python analysis/paper/fig5_three_row_figure.py` to export this draft. The exports and the row order and
