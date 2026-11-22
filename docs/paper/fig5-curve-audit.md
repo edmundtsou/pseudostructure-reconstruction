@@ -51,32 +51,45 @@ With all 3,912 screened genes as the background, 53 terms were enriched in the 2
 list and 28 cluster-by-term tests passed correction. SLC transport contributed 37 of 71 screened members to
 the 278-gene list (5.05 expected, q = 9.95 × 10⁻²²). These full-background comparisons include selection for
 strong positional variation. The 278-gene background tests cluster preferences after that selection.
+Both backgrounds use a hypergeometric membership comparison. These tests describe gene lists from the
+study cohort and do not sample biological donors.
 
-**Preranked GSEA of gradient amplitude.** On all 3,912 genes, peroxisome and fatty-acid metabolism ranked
-toward the largest absolute losses of positional range in human in the primary fits, gene-held-out fits and
-observed count bins. In a second ranking we compared human range with the typical range for genes with similar
-mouse positional ranges. Joint q rose to at least 0.32 for peroxisome and 0.82 for fatty-acid metabolism. SLC transport
-and lysosome genes ranked toward greater retained variation in all three sources (joint q = 0.014–0.029 and
-0.014–0.020, respectively). The two scores capture different properties. SLC genes can start with large
-mouse ranges and have smaller human ranges while retaining more variation than matched orthologs.
+**Preranked GSEA of gradient amplitude.** The amplitude rankings include all 3,912 screened genes. One
+score is the difference in fitted log₂ range between mouse and human. The second subtracts the human range
+from its expected median for genes with similar mouse ranges and scales by the local interquartile spread.
+The reference uses 32 equal-count bands of mouse range and interpolation between them. We use weighted
+GSEA for the log₂-range difference and classic unweighted GSEA for the standardized score. Both quantify
+the ranks of genes within each annotation relative to the ranked background.
 
-**Preranked GSEA of position and shape.** Carbohydrate metabolism ranked toward later human bias in the 278
-genes (within-rank q = 0.010, 0.051 and 0.006 for primary, gene-held-out and observed profiles). The signal
-was weaker among the 175 shape-supported genes after setting each section's profile variance to one
-(within-rank q = 0.503–0.740). GSEA of shape conservation among the 53 twofold-supported genes yielded no
-adjusted calls. The figure can use the amplitude-matched GSEA as context for the descriptive shape counts.
+The protein digestion and absorption set shows greater retained range in the matched comparison across
+all three profile sources (exploratory gene-set FDR 0.002, 0.037 and 0.024). Several transporters contribute
+to its leading edge alongside peptidases. SLC transport and lysosome also rank toward retention in all
+three sources, with FDR ranges of 0.015–0.063 and 0.054–0.332. These results describe gradient strength.
 
-GSEA used rank-normal scores, 4,000 gene-set permutations and local Reactome, KEGG and Hallmark annotations.
-The amplitude-adjusted ranking subtracts the human log₂ range from its expected median and scales by the
-interquartile spread. The reference uses 32 equal-count bands of mouse range and interpolation between them.
-We report GSEApy's FDR within each ranking and BH across six rankings per profile source, with a nominal
-probability floor of 1/4,001 for the joint calculation. The sources reuse the same cohort and differ in curve
-construction. Their agreement checks sensitivity to the model and position bins. These exploratory gene-set
-tests describe two mouse kidneys and one human donor.
+**Preranked GSEA of expression position.** The 175-gene ranking includes all genes with reproducible positional
+variation in all four sections, regardless of how much their expression position changes. The score is mean mouse
+minus mean human center of mass on the common COAST interval. Each section's center uses the area above
+its own minimum expression. This statistic is invariant to positive rescaling and constant offsets. A positive
+score indicates an earlier center in human. We use weighted scoring on the position difference and also report
+the medians for all four section pairs, so the pathway results can be read on the original coordinate scale.
+Four pathways have at least 15 members in the positional ranking. The ten-member sensitivity covers 14
+labels with 13 distinct memberships. The four primary sets each have gene-set FDR > 0.05. All seven gene
+profiles in Fig. 5 retain their earlier or later direction across the three sources. Carbohydrate metabolism
+has eight position-supported members. Six have a later center in human in all four section-pair comparisons
+of the primary fits and the smoothed count bins. The set is reported descriptively in the position table.
 
-Run `python analysis/paper/fig5_enrichment.py` after building the curve audit and three-row draft.
-Outputs in `results/paper_figures/fig5/enrichment/` include the ORA and GSEA tables, per-gene ranks and
-the draft amplitude comparison panel. Filled markers denote joint q ≤ 0.05.
+GSEA used 4,000 gene-set permutations and local Reactome, KEGG and Hallmark annotations. Primary comparisons
+require 15 eligible members and count identical eligible membership once. The position analysis also reports a
+ten-member sensitivity. GSEApy's FDR is reported per ranking. The fitted, gene-held-out and smoothed observed
+profiles reuse the same cohort and assess modeling sensitivity. Gene-set permutations compare pathway members
+with other genes on a fixed rank list. Donor-level inference would require independent donors in each condition,
+and the human samples in this study are two sections of one donor. The figure displays NES as exploratory scores
+normalized within each ranking.
+[Broad GSEA guide](https://docs.gsea-msigdb.org/GSEA/GSEA_User_Guide/) · [Gene-set correlation](https://pmc.ncbi.nlm.nih.gov/articles/PMC3458527/)
+
+Run `python analysis/paper/fig5_enrichment.py` after building the curve audit and three-row draft. Outputs in
+`results/paper_figures/fig5/enrichment/` include ORA and GSEA tables, per-gene ranks, per-section-pair position
+effects and the exploratory amplitude comparison panel.
 
 ## Global comparison
 

@@ -10,9 +10,8 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.ndimage import gaussian_filter1d
-from scipy.stats import false_discovery_control
 
-from fig5_curve_audit import WINDOW, cross, curve_arrays, shape
+from fig5_curve_audit import WINDOW, curve_arrays
 from fig5_urate import REPO, SECTIONS
 
 sys.path.insert(0, str(REPO))
@@ -20,6 +19,7 @@ from pseudospace.modules import enrich_modules  # noqa: E402
 from pseudospace.pathway_pipelines import rank_first_gsea  # noqa: E402
 
 MAX_SIZE = 300
+GSEA_MIN_SIZE = 15
 WIDTH_MM = 183
 HEIGHT_MM = 76
 RANGE_PROGRAMS = {
@@ -27,7 +27,6 @@ RANGE_PROGRAMS = {
     'Peroxisomal protein import': 'R-HSA-9033241',
     'Fatty-acid metabolism': 'R-HSA-8978868',
     'SLC transport': 'R-HSA-425407',
-    'Amino-acid transport': 'R-HSA-352230',
     'Protein digestion': 'KEGG_2019_Mouse::Protein digestion and absorption',
     'Lysosome': 'KEGG_2019_Mouse::Lysosome',
 }
@@ -79,56 +78,83 @@ def range_adjusted_loss(mouse, human):
     return (expected - human) / spread
 
 
+def position_centers(fit, x):
+    """Center of mass of the expression above each section's own minimum on the common axis."""
+    above_floor = fit - fit.min(axis=-1, keepdims=True)
+    mass = np.trapz(above_floor, x, axis=-1)
+    moment = np.trapz(above_floor * x, x, axis=-1)
+    return np.divide(moment, mass, out=np.full_like(moment, np.nan), where=mass > 0)
+
+
 def rank_scores(fit, x):
     amplitude = np.ptp(fit, axis=-1)
     mouse, human = amplitude[:2].mean(0), amplitude[2:].mean(0)
-    centered = fit - fit.mean(axis=-1, keepdims=True)
-    shared_scale = centered.std(axis=-1).max(0)
-    w = (x.mean() - x) / np.abs(x - x.mean()).sum()
-    delta = centered[2:].mean(0) - centered[:2].mean(0)
-    unit = shape(fit)
+    center = position_centers(fit, x)
     return {
         'human_range_loss': mouse - human,
-        'human_early_bias': (delta @ w) / shared_scale,
-        'shape_conservation': cross(unit[:2], unit[2:]).min(0),
         'mouse_range_adjusted_loss': range_adjusted_loss(mouse, human),
-        'unit_variance_early_bias': (unit[2:].mean(0) - unit[:2].mean(0)) @ w,
+        'earlier_center_in_human': center[:2].mean(0) - center[2:].mean(0),
     }
 
 
-def run_gsea(table, shaped, inputs, sets, permutations, threads):
-    retained = table.cluster.notna()
+def distinct_memberships(sets):
+    """Count an identical eligible membership once in the GSEA null family."""
+    by_members = {}
+    for term, members in sets.items():
+        by_members.setdefault(tuple(members), []).append(term)
+    unique = {terms[0]: list(members) for members, terms in by_members.items()}
+    labels = pd.DataFrame([(terms[0], term, len(terms)) for terms in by_members.values() for term in terms],
+                          columns=['representative', 'pathway_id', 'identical_memberships'])
+    return unique, labels
+
+
+def run_gsea(genes, shaped, inputs, sets, permutations, threads):
+    all_genes = np.ones(len(genes), bool)
     screens = [
-        ('all_screened', 'human_range_loss', np.ones(len(table), bool), 10),
-        ('all_screened', 'mouse_range_adjusted_loss', np.ones(len(table), bool), 10),
-        ('twofold_either', 'human_range_loss', retained, 5),
-        ('twofold_either', 'human_early_bias', retained, 5),
-        ('twofold_both', 'shape_conservation', table.reliable_both, 3),
-        ('graded_both', 'unit_variance_early_bias', shaped, 5),
+        ('all_screened', 'human_range_loss', all_genes, GSEA_MIN_SIZE, 1.),
+        ('all_screened', 'mouse_range_adjusted_loss', all_genes, GSEA_MIN_SIZE, 0.),
+        ('graded_both', 'earlier_center_in_human', shaped, GSEA_MIN_SIZE, 1.),
+        ('graded_both', 'earlier_center_in_human', shaped, 10, 1.),
     ]
     tests = []
     ranks = []
     for source, grid, profiles in inputs:
         scores = rank_scores(profiles, grid)
-        for universe, statistic, keep, minimum in screens:
-            score = pd.Series(scores[statistic], index=table.index).loc[keep]
-            test = rank_first_gsea(score, local_sets(sets, score.index, minimum), metric='rank_normal',
-                                   min_size=minimum, max_size=MAX_SIZE, permutation_num=permutations,
-                                   seed=2026, threads=threads)
-            test = test.drop(columns=['p_one_sided', 'call'])
+        for universe, statistic, keep, minimum, weight in screens:
+            score = pd.Series(scores[statistic], index=genes).loc[keep]
+            unique, labels = distinct_memberships(local_sets(sets, score.index, minimum))
+            test = rank_first_gsea(score, unique, metric='raw', weight=weight, min_size=minimum,
+                                   max_size=MAX_SIZE, permutation_num=permutations, seed=2026, threads=threads)
+            print(source, universe, statistic, minimum, len(test), 'distinct sets', flush=True)
+            test = test.drop(columns=['p_one_sided', 'call']).rename(columns={'pathway_id': 'representative'})
+            test = test.merge(labels, on='representative', validate='one_to_many')
+            test = test.rename(columns={'p': 'gene_set_p', 'q': 'gene_set_fdr', 'fwer_p': 'gene_set_fwer_p'})
             test['leading_edge'] = test.leading_edge.map('; '.join)
-            test = test.assign(source=source, universe=universe, statistic=statistic)
+            test = test.assign(source=source, universe=universe, statistic=statistic,
+                               min_members=minimum, weight=weight)
             tests.append(test)
-            ranks.append(score.rename('score').reset_index().assign(source=source, universe=universe,
-                                                                   statistic=statistic))
-            print(source, universe, statistic, len(test), 'sets; within-rank q ≤ 0.05:', int(test.q.le(.05).sum()),
-                  flush=True)
-    tests = pd.concat(tests, ignore_index=True)
-    # A zero nominal p means no sampled statistic exceeded the observed value.
-    # The floor also makes the joint BH calculation finite at the permutation resolution.
-    tests['joint_bh_q'] = tests.groupby('source').p.transform(
-        lambda values: false_discovery_control(values.clip(lower=1 / (permutations + 1))))
-    return tests, pd.concat(ranks, ignore_index=True)
+            if minimum == GSEA_MIN_SIZE:
+                ranks.append(score.rename('score').reset_index().assign(source=source, universe=universe,
+                                                                       statistic=statistic))
+    return pd.concat(tests, ignore_index=True), pd.concat(ranks, ignore_index=True)
+
+
+def pathway_center_summary(genes, shaped, inputs, sets):
+    """Describe all four mouse-human section pairs for each supported pathway."""
+    members = local_sets(sets, genes[shaped], minimum=5)
+    rows = []
+    for source, x, fit in inputs:
+        center = position_centers(fit, x)
+        shifts = np.asarray([center[m] - center[h] for m in (0, 1) for h in (2, 3)])
+        for term, names in members.items():
+            change = shifts[:, genes.get_indexer(names)]
+            rows.append({'source': source, 'pathway_id': term, 'n': len(names),
+                         'median_earlier_center': np.median(change.mean(0)),
+                         'earlier_in_every_pair': (change > 0).all(0).sum(),
+                         'later_in_every_pair': (change < 0).all(0).sum(),
+                         **{f'median_{m}_vs_{h}': np.median(values) for (m, h), values in
+                            zip(((m, h) for m in SECTIONS[:2] for h in SECTIONS[2:]), change)}})
+    return pd.DataFrame(rows)
 
 
 def plot_amplitude_results(gsea, output, *, audit_layout=False):
@@ -144,7 +170,7 @@ def plot_amplitude_results(gsea, output, *, audit_layout=False):
     names = list(RANGE_PROGRAMS)
     markers = {'fit': ('o', -.22, 'Fitted profiles'),
                'gene_held_out': ('D', 0, 'Gene-held-out fits'),
-               'observed': ('^', .22, 'Observed bins')}
+               'observed': ('^', .22, 'Smoothed count bins')}
     ranks = ('human_range_loss', 'mouse_range_adjusted_loss')
     captions = ('Absolute range loss', 'Range loss at similar mouse strength')
     all_genes = gsea.loc[gsea.universe.eq('all_screened')]
@@ -161,20 +187,20 @@ def plot_amplitude_results(gsea, output, *, audit_layout=False):
             for row in rows.itertuples(index=False):
                 marker, offset, _ = markers[row.source]
                 ax.scatter(row.NES, y + offset, marker=marker, s=13, lw=.65,
-                           facecolors=color if row.joint_bh_q <= .05 else 'white', edgecolors=color, zorder=3)
+                           facecolors=color, edgecolors=color, zorder=3)
         ax.set(xlim=(-3.1, 3.1), xticks=[-3, -2, -1, 0, 1, 2, 3], ylim=(len(names) - .5, -.5))
         ax.spines['left'].set_visible(False)
         ax.tick_params(axis='y', length=0, pad=4)
     axes[0].set_yticks(np.arange(len(names)), names)
     fig.text(.055, .954, 'Which programs retain positional variation?', weight='bold', fontsize=10.7, va='top')
-    fig.text(.055, .825, 'Ranked comparison across all 3,912 screened orthologs', fontsize=7.2, color='.28')
+    fig.text(.055, .825, 'Exploratory GSEA across all 3,912 screened orthologs', fontsize=7.2, color='.28')
     fig.text(.621, .149, 'Normalized enrichment score', fontsize=7, ha='center')
     fig.text(.621, .103, '← More retained                          Greater loss →', fontsize=6.4, ha='center')
     fig.legend(handles=[Line2D([], [], color=color, marker=mark, lw=0, markersize=4, label=label)
                         for mark, _, label in markers.values()], loc='lower left',
                bbox_to_anchor=(.048, .035), frameon=False, ncol=3, fontsize=6.6,
                columnspacing=.9, handletextpad=.25)
-    fig.text(.967, .062, 'Filled markers · joint q ≤ 0.05', fontsize=6.6, ha='right')
+    fig.text(.967, .062, 'Two human sections, one donor', fontsize=6.6, ha='right')
     if audit_layout:
         from audit_panel_alignment import require_matplotlib_panel_alignment
 
@@ -213,11 +239,12 @@ def main():
         observed = raw['profiles'][:, rows][:, :, keep].astype(float)
     observed = gaussian_filter1d(observed, sigma=.75, axis=-1)
     run_ora(table, fit, sets).to_csv(output / 'ora.csv', index=False)
-    gsea, ranks = run_gsea(table, prior.reliable_both,
-                           [('fit', x, fit), ('gene_held_out', x, held), ('observed', xx[keep], observed)],
-                           sets, args.permutations, args.threads)
+    inputs = [('fit', x, fit), ('gene_held_out', x, held), ('observed', xx[keep], observed)]
+    gsea, ranks = run_gsea(table.index, prior.reliable_both, inputs, sets, args.permutations, args.threads)
     gsea.to_csv(output / 'gsea.csv', index=False)
     ranks.to_csv(output / 'gene_scores.csv', index=False)
+    pathway_center_summary(table.index, prior.reliable_both, inputs, sets).to_csv(
+        output / 'pathway_center_summary.csv', index=False)
     plot_amplitude_results(gsea, output, audit_layout=args.audit_layout)
 
 

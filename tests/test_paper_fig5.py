@@ -145,3 +145,11 @@ def test_full_curve_audit_separates_reversal_from_flat_signal():
     assert result['conserved'].tolist() == [True, False, False]
     assert result['divergent'].tolist() == [False, True, False]
     assert result['reliable_both'].tolist() == [True, True, False]
+
+
+def test_profile_center_separates_relocation_from_attenuation():
+    from fig5_enrichment import position_centers
+
+    x = np.linspace(0, 1, 21)
+    profiles = np.vstack([x, 3 + .01 * x, 1 - x, np.ones_like(x)])
+    np.testing.assert_allclose(position_centers(profiles, x), [2 / 3, 2 / 3, 1 / 3, np.nan], atol=.001)

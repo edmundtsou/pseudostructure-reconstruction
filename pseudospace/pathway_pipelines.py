@@ -181,11 +181,11 @@ def rank_normal_scores(statistic):
 
 
 def rank_first_gsea(statistic, gene_sets, *, metric='raw', min_size=10, max_size=300, permutation_num=1000, seed=12,
-                    threads=4, fdr=.05):
+                    threads=4, fdr=.05, weight=1.):
     """Rank all genes by ``statistic`` (descending) and run gseapy's preranked GSEA on ``gene_sets``.
 
-    gseapy defaults (weight 1, gene-set permutation, its own FDR) except sizes, permutations, seed and threads; no
-    plots or files. ``metric='rank_normal'`` ranks by ``rank_normal_scores(statistic)`` instead of the raw values.
+    Uses GSEApy's gene-set permutations and FDR. Set ``weight=0`` for classic (unweighted) scoring. The default
+    weights hits by the ranking statistic's absolute magnitude. ``metric='rank_normal'`` uses rank-normal scores.
     Genes are passed sorted by (score descending, name) so ties are ordered reproducibly. Returns one row per tested
     pathway, in ``gene_sets`` order: pathway_id, n (genes in the ranking), ES, NES, p (GSEA's nominal p, computed
     within the sign of ES), q (GSEA's FDR), fwer_p, leading_edge (list), p_one_sided (upper tail, notebook 61's
@@ -203,7 +203,8 @@ def rank_first_gsea(statistic, gene_sets, *, metric='raw', min_size=10, max_size
     ranking = (values.rename_axis('gene').reset_index(name='score').astype({'gene': str})
                .sort_values(['score', 'gene'], ascending=[False, True], kind='stable'))
     result = gp.prerank(rnk=ranking, gene_sets=gene_sets, min_size=min_size, max_size=max_size,
-                        permutation_num=permutation_num, seed=seed, threads=threads, outdir=None, no_plot=True)
+                        permutation_num=permutation_num, seed=seed, threads=threads, weight=weight,
+                        outdir=None, no_plot=True)
     table = result.res2d.set_index(result.res2d.Term.astype(str))
     universe = set(ranking.gene)
     tested = [p for p in gene_sets if p in table.index]
