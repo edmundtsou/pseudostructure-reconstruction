@@ -31,6 +31,41 @@ Run `python analysis/paper/fig5_curve_audit.py` to prepare the fixed-width count
 `python analysis/paper/fig5_three_row_figure.py` to export this draft. The exports and the row order and
 program counts are in `results/paper_figures/fig5/three_row/`.
 
+## ORA and GSEA follow-up
+
+**ORA of the four clusters.** We intersected the local pathway memberships with the 278 eligible genes,
+kept sets with at least five members and corrected jointly across 396 cluster-by-set tests. Zero passed
+BH q ≤ 0.05 (minimum q = 0.556). Separate ORA tested the conserved and divergent lists against their 53-gene
+background (56 tests). SLC-mediated transport was the strongest conserved term (14 of 14 supported members
+in the conserved list, nominal p = 0.0025, q = 0.142). The two lists with pronounced amplitude loss also
+yielded zero adjusted calls against the 278-gene background (198 tests).
+
+**Preranked GSEA of gradient amplitude.** On all 3,912 genes, peroxisome and fatty-acid metabolism ranked
+toward the largest absolute losses of positional range in human in the primary fits, gene-held-out fits and
+observed count bins. In a second ranking we compared human range with the typical range for genes with similar
+mouse positional ranges. Joint q rose to at least 0.32 for peroxisome and 0.82 for fatty-acid metabolism. SLC transport
+and lysosome genes ranked toward greater retained variation in all three sources (joint q = 0.014–0.029 and
+0.014–0.020, respectively). The two scores capture different properties. SLC genes can start with large
+mouse ranges and have smaller human ranges while retaining more variation than matched orthologs.
+
+**Preranked GSEA of position and shape.** Carbohydrate metabolism ranked toward later human bias in the 278
+genes (within-rank q = 0.010, 0.051 and 0.006 for primary, gene-held-out and observed profiles). The signal
+was weaker among the 175 shape-supported genes after setting each section's profile variance to one
+(within-rank q = 0.503–0.740). GSEA of shape conservation among the 53 twofold-supported genes yielded no
+adjusted calls. The figure can use the amplitude-matched GSEA as context for the descriptive shape counts.
+
+GSEA used rank-normal scores, 4,000 gene-set permutations and local Reactome, KEGG and Hallmark annotations.
+The amplitude-adjusted ranking subtracts the human log₂ range from its expected median and scales by the
+interquartile spread. The reference uses 32 equal-count bands of mouse range and interpolation between them.
+We report GSEApy's FDR within each ranking and BH across six rankings per profile source, with a nominal
+probability floor of 1/4,001 for the joint calculation. The sources reuse the same cohort and differ in curve
+construction. Their agreement checks sensitivity to the model and position bins. These exploratory gene-set
+tests describe two mouse kidneys and one human donor.
+
+Run `python analysis/paper/fig5_enrichment.py` after building the curve audit and three-row draft.
+Outputs in `results/paper_figures/fig5/enrichment/` include the ORA and GSEA tables, per-gene ranks and
+the draft amplitude comparison panel. Filled markers denote joint q ≤ 0.05.
+
 ## Global comparison
 
 Of 3,912 orthologs examined, 175 had reproducible positional variation in both mouse kidneys and both human
