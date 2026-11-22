@@ -40,6 +40,18 @@ background (56 tests). SLC-mediated transport was the strongest conserved term (
 in the conserved list, nominal p = 0.0025, q = 0.142). The two lists with pronounced amplitude loss also
 yielded zero adjusted calls against the 278-gene background (198 tests).
 
+The cluster result also held with minimum eligible set sizes of three, eight or ten genes when correcting
+across all four clusters. With a ten-gene minimum and correction only within cluster 3, two Reactome labels
+for an identical eligible transporter-disorder set of 15 genes reached q = 0.038 (seven observed, 2.27 expected).
+Across all four clusters the corresponding q was 0.152. With the five-gene minimum, the cluster 3 SLC-mediated
+transport overlap was 11 of 37 eligible members (5.59 expected), and cluster 1 contained eight of nine lysosome
+members (4.21 expected). Both had joint q = 0.855.
+
+With all 3,912 screened genes as the background, 53 terms were enriched in the 278-gene positional filter
+list and 28 cluster-by-term tests passed correction. SLC transport contributed 37 of 71 screened members to
+the 278-gene list (5.05 expected, q = 9.95 × 10⁻²²). These full-background comparisons include selection for
+strong positional variation. The 278-gene background tests cluster preferences after that selection.
+
 **Preranked GSEA of gradient amplitude.** On all 3,912 genes, peroxisome and fatty-acid metabolism ranked
 toward the largest absolute losses of positional range in human in the primary fits, gene-held-out fits and
 observed count bins. In a second ranking we compared human range with the typical range for genes with similar

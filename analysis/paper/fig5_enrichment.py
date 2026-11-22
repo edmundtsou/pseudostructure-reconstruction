@@ -47,9 +47,11 @@ def run_ora(table, fit, sets):
     ranges = np.ptp(fit, axis=-1)
     loss = ranges[2:].max(0) <= .5 * ranges[:2].min(0)
     gain = ranges[:2].max(0) <= .5 * ranges[2:].min(0)
+    clusters = {f'Cluster {i}': cluster.index[cluster.eq(i)] for i in sorted(cluster.astype(int).unique())}
     screens = [
-        ('clusters', cluster.index,
-         {f'Cluster {i}': cluster.index[cluster.eq(i)] for i in sorted(cluster.astype(int).unique())}, 5),
+        ('clusters', cluster.index, clusters, 5),
+        ('positional_filter', table.index, {'Twofold in either group': cluster.index}, 5),
+        ('clusters_vs_all_screened', table.index, clusters, 5),
         ('shape_class', both.index, {'Conserved': both.index[both.conserved],
                                     'Divergent': both.index[both.divergent]}, 3),
         ('twofold_range_loss', cluster.index,
